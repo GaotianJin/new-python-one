@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eighth.dao.INetFollowDao">
+
+
+	<select id="getCount" resultType="int">
+
+		select count(*) from netfollows
+		<where>
+			<if test="userId!=null">and UserId=#{userId}</if>
+			<if test="studentName!=null">and studentName like '%${studentName}%'</if>
+			<if test="followType!=null">and followType=#{followType}</if>
+			<if test="followState!=null">and followState=#{followState}</if>
+			<if test="dateA!=null">and followTime &gt;= #{dateA}</if>
+			<if test="dateB!=null">and followTime &lt;= #{dateB}</if>
+			and folIsDel=0
+		</where>
+	</select>
+	
+	
+	<select id="selectlistPage" resultType="com.eighth.entity.Netfollows">
+		select * from netfollows
+		<where>
+			<if test="userId!=null">and UserId=#{userId}</if>
+			<if test="studentName!=null">and studentName like '%${studentName}%'</if>
+			<if test="followType!=null">and followType=#{followType}</if>
+			<if test="followState!=null">and followState=#{followState}</if>
+			<if test="dateA!=null">and followTime &gt;= #{dateA}</if>
+			<if test="dateB!=null">and followTime &lt;= #{dateB}</if>
+			and folIsDel=0 order by followTime desc
+		</where>
+		limit #{page},#{rows}
+	</select>
+
+	<insert id="insertNetFollow" parameterType="com.eighth.entity.Netfollows">
+		INSERT INTO netfollows
+		(StudentId,StudentName,FollowTime,NextFollowTime,Content,UserId,FollowType,FollowState)
+		VALUES(#{studentId},#{studentName},#{followTime},#{nextFollowTime},#{content},
+		#{userId},#{followType},#{followState});
+	</insert>
+	
+	
+	<select id="getCountByStudentId" resultType="int">
+		select count(*) from netfollows where studentId=#{studentId} 
+	</select>
+	
+	<select id="selectListPageByStuId" parameterType="com.eighth.entity.Netfollows" resultType="com.eighth.entity.Netfollows">
+		select * from netfollows where studentId=#{studentId}  limit #{page},#{rows}
+	</select>
+	<delete id="deleteNetFollow">
+		delete from netfollows where StudentId=#{id}
+	</delete>
+</mapper>

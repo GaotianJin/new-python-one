@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eighth.dao.INetStudentDao">
+	<select id="getAllStudent" resultType="com.eighth.entity.Students">
+		select * from students
+	</select>
+
+
+	<!-- 查询数据总条数 -->
+	<select id="getCount" resultType="int">
+
+		select count(*) from students
+		<where>
+			<if test="stuName!=null">and stuName like '%${stuName}%'</if>
+			<if test="stuPhone!=null">and stuPhone like '%${stuPhone}%'</if>
+			<if test="isPay!=null">and isPay=#{isPay}</if>
+			<if test="isValid!=null">and isValid=#{isValid}</if>
+			<if test="isReturnVist!=null">and isReturnVist=#{isReturnVist}</if>
+			<if test="askerName!=null">and askerName=#{askerName}</if>
+			<if test="netPusherId!=null">and NetPusherId=#{netPusherId}</if>
+			<if test="askerId!=null">and askerId=#{askerId}</if>
+			<if test="stuQQ!=null">and stuQQ like '%${stuQQ}%'</if>
+			<if test="dateA!=null">and CreateTime &gt;= #{dateA}</if>
+			<if test="dateB!=null">and CreateTime &lt;= #{dateB}</if>
+			and stuIsDel=0
+		</where>
+	</select>
+
+
+	<select id="selectlistPage" resultType="com.eighth.entity.Students">
+		select * from students
+		<where>
+			<if test="stuName!=null">and stuName like '%${stuName}%'</if>
+			<if test="stuPhone!=null">and stuPhone like '%${stuPhone}%'</if>
+			<if test="isPay!=null">and isPay=#{isPay}</if>
+			<if test="isValid!=null">and isValid=#{isValid}</if>
+			<if test="isReturnVist!=null">and isReturnVist=#{isReturnVist}</if>
+			<if test="askerName!=null">and askerName=#{askerName}</if>
+			<if test="netPusherId!=null">and NetPusherId=#{netPusherId}</if>
+			<if test="askerId!=null">and askerId=#{askerId}</if>
+			<if test="stuQQ!=null">and stuQQ like '%${stuQQ}%'</if>
+			<if test="dateA!=null">and CreateTime &gt;= #{dateA}</if>
+			<if test="dateB!=null">and CreateTime &lt;= #{dateB}</if>
+			and stuIsDel=0 order by CreateTime desc
+		</where>
+		limit #{page},#{rows}
+	</select>
+	
+	<!-- 查询数据总条数 -->
+	<select id="getCount1" resultType="int">
+
+		select count(*) from students
+		<where>
+			<if test="stuName!=null">and stuName like '%${stuName}%'</if>
+			<if test="stuPhone!=null">and stuPhone like '%${stuPhone}%'</if>
+			<if test="isPay!=null">and isPay=#{isPay}</if>
+			<if test="isValid!=null">and isValid=#{isValid}</if>
+			<if test="isReturnVist!=null">and isReturnVist=#{isReturnVist}</if>
+			<if test="askerName!=null">and askerName=#{askerName}</if>
+			<if test="netPusherId!=null">and NetPusherId=#{netPusherId}</if>
+			<if test="askerId!=null">and askerId=#{askerId}</if>
+			<if test="stuQQ!=null">and stuQQ like '%${stuQQ}%'</if>
+			<if test="dateA!=null">and CreateTime &gt;= #{dateA}</if>
+			<if test="dateB!=null">and CreateTime &lt;= #{dateB}</if>
+			and stuIsDel=0 and askerId!=""
+		</where>
+	</select>
+	
+	<select id="selectlistPage1" resultType="com.eighth.entity.Students">
+		select * from students
+		<where>
+			<if test="stuName!=null">and stuName like '%${stuName}%'</if>
+			<if test="stuPhone!=null">and stuPhone like '%${stuPhone}%'</if>
+			<if test="isPay!=null">and isPay=#{isPay}</if>
+			<if test="isValid!=null">and isValid=#{isValid}</if>
+			<if test="isReturnVist!=null">and isReturnVist=#{isReturnVist}</if>
+			<if test="askerName!=null">and askerName=#{askerName}</if>
+			<if test="netPusherId!=null">and NetPusherId=#{netPusherId}</if>
+			<if test="askerId!=null">and askerId=#{askerId}</if>
+			<if test="stuQQ!=null">and stuQQ like '%${stuQQ}%'</if>
+			<if test="dateA!=null">and CreateTime &gt;= #{dateA}</if>
+			<if test="dateB!=null">and CreateTime &lt;= #{dateB}</if>
+			and stuIsDel=0 and askerId!="" order by CreateTime desc
+		</where>
+		limit #{page},#{rows}
+	</select>
+
+
+	<insert id="insertStudent" parameterType="com.eighth.entity.Students">
+		INSERT INTO students
+		(StuId, StuNAME, StuAge, StuSex, StuPhone, StuStatus, PerState, MsgSource,
+		SourceUrl, SourceKeyWord, StuAddress, StuQQ,
+		StuWeiXin, Content, FromPart, StuConcern, IsBaoBei,AskerId,AskerName,CreateUser,NetPusherId )
+		
+		VALUES(#{stuId}, #{stuName}, #{stuAge}, #{stuSex}, #{stuPhone}, #{stuStatus}, #{perState}, #{msgSource},
+		#{sourceUrl}, #{sourceKeyWord}, #{stuAddress},
+		#{stuQQ}, #{stuWeiXin}, #{content}, #{FromPart}, #{stuConcern}, #{IsBaoBei},#{askerId},#{askerName},#{createUser},#{netPusherId});
+	</insert>
+	
+	<update id="updateStudent" parameterType="com.eighth.entity.Students">
+		update students set StuNAME=#{stuName},StuSex=#{stuSex},StuAge=#{stuAge},StuPhone=#{stuPhone},StuStatus=#{stuStatus},PerState=#{perState},
+		MsgSource=#{msgSource},SourceUrl=#{sourceUrl},SourceKeyWord=#{sourceKeyWord},StuAddress=#{stuAddress},StuConcern=#{stuConcern},FromPart=#{FromPart},
+		StuQQ=#{stuQQ},StuWeiXin=#{stuWeiXin},IsBaoBei=#{IsBaoBei},Content=#{content},ZiXunName=#{ziXunName},LearnForward=#{learnForward},Record=#{record},
+		IsValid=#{isValid},LostValid=#{lostValid},IsReturnVist=#{isReturnVist},FirstVisitTime=#{firstVisitTime},IsHome=#{isHome},HomeTime=#{homeTime},PreMoney=#{preMoney},
+		PreMoneyTime=#{preMoneyTime},IsPay=#{isPay},Money=#{money},PayTime=#{payTime},IsReturnMoney=#{isReturnMoney},ReturnMoneyReason=#{returnMoneyReason},IsInClass=#{isInClass},
+		InClassTime=#{inClassTime},InClassContent=#{inClassContent},AskerContent=#{askerContent} where StuId=#{stuId}
+	</update>
+	<delete id="deleteStudent">
+		delete from students where StuId=#{id}
+	</delete>
+	<update id="updateStuAskers" parameterType="com.eighth.entity.Students">
+		update students set AskerId=#{askerId},AskerName=#{askerName} where StuId=#{stuId}
+	</update>
+	<select id="getCountAskerID" resultType="int">
+		select count(9) from students where AskerId=#{id}
+	</select>
+	<select id="getStudentById" resultType="com.eighth.entity.Students">
+		select * from students where StuId=#{id}
+	</select>
+	<select id="getCountByAkserId" resultType="int">
+		select count(9) from students where AskerId=#{0}
+	</select>
+	<select id="getCountByAddress" resultType="int">
+		select count(9) from students where StuAddress=#{0}
+	</select>
+</mapper>

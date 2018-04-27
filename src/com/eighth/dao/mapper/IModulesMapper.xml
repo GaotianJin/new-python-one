@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.eighth.dao.IModulesDao">
+ 	<select id="selectByParentId" resultType="com.eighth.entity.Modules">
+ 		select * from modules where moduleParentId=#{moduleParentId}
+ 	</select>
+ 	<insert id="addModules" parameterType="com.eighth.entity.Modules">
+ 		insert into modules(ModuleNAME,ModuleParentId,ModulePath) 
+ 		values(#{moduleName},#{moduleParentId},#{modulePath})
+ 	</insert>
+ 	<update id="updModules" parameterType="com.eighth.entity.Modules">
+ 		update modules set ModuleNAME=#{moduleName},ModulePath=#{modulePath} where ModuleId=#{moduleId}
+ 	</update>
+ 	<delete id="delModules">
+    delete from modules where moduleId = #{moduleId}
+  </delete>
+ 	<select id="selectBySuperId" resultType="String">
+		SELECT ModuleNAME FROM modules WHERE moduleId=(SELECT ModuleParentId FROM modules WHERE
+		ModuleId=#{moduleId})
+	</select>
+ 	<select id="selectAll" resultType="com.eighth.entity.Modules" >
+    	select * from modules
+ 	</select>
+ 	<select id="selectCountByModuleName" resultType="int">
+ 		select count(9) from modules where ModuleNAME=#{moduleName}
+ 	</select>
+ 	<select id="selectModuleIdByModuleName" resultType="int">
+ 		select ModuleId from modules where ModuleNAME=#{name}
+ 	</select>
+ 	<select id="selectByUserid" resultType="com.eighth.entity.Modules">
+ 		SELECT * FROM modules WHERE ModuleId IN(
+	    SELECT ModuleId FROM rolemodules WHERE RoleId IN(
+	    SELECT RoleId FROM userroles WHERE UserId=#{0})) AND ModuleParentId=#{1}
+ 	</select>
+ 	<select id="selectParentIdByMid" resultType="int">
+ 		select ModuleParentId from modules where ModuleId=#{mid}
+ 	</select>
+ </mapper>

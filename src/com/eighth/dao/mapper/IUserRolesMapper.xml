@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.eighth.dao.IUserRolesDao">
+  	<select id="selectRoleIdByUserId" resultType="com.eighth.entity.UserRoles">
+  		select * from userroles where UserId=#{id}
+  	</select>
+  	
+  	<insert id="insertUserRoles" parameterType="com.eighth.entity.UserRoles">
+  		insert into userroles values(null,#{userId},#{roleId})
+  	</insert>
+  	
+  	<update id="updateUserRoles" parameterType="com.eighth.entity.UserRoles">
+  		update userroles set RoleId=#{roleId} where UserId=#{userId}
+  	</update>
+  	
+  	<select id="selectRole" resultType="int">
+  		select count(9) from userroles where UserId=#{0} and RoleId=#{1}
+  	</select>
+  	
+  	<delete id="deleteUserRoles" parameterType="com.eighth.entity.UserRoles">
+  		delete from userroles where UserId=#{userId} and RoleId=#{roleId}
+  	</delete>
+  </mapper>
