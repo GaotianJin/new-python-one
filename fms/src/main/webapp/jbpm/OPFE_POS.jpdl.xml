@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<process xmlns="http://jbpm.org/4.4/jpdl" name="OPFE_POS">
+  <start g="220,-10,52,52" name="开始" id="start-0">
+    <transition name="" g="245,55:" to="分支" id="start-0-fork-5*-p0"/>
+  </start>
+  <task g="197,175,102,52" name="保全申请" id="task-1" assignee="#{userId}">
+    <transition name="" g="248,267:" to="保全复核" id="task-1-task-2*-p0"/>
+  </task>
+  <task g="201,310,102,52" name="保全复核" id="task-2" assignee="#{userId}">
+    <transition name="" g="251,370:" to="是否复核通过" id="task-2-decision-9*-p0"/>
+  </task>
+  <end g="233,671,52,52" name="结束" id="end-4"/>
+  <fork g="221,69,52,52" name="分支" id="fork-5">
+    <transition name="" g="118,92:" to="保全撤销" id="fork-5-task-6*-p0"/>
+    <transition name="" g="246,147:" to="保全申请" id="fork-5-task-1*-p0"/>
+  </fork>
+  <task g="72,311,102,52" name="保全撤销" id="task-6" assignee="#{userId}">
+    <transition name="" g="132,700:" to="结束" id="task-6-end-4*-p0"/>
+  </task>
+  <task g="423,304,102,52" name="复核修改" id="task-7" assignee="#{userId}">
+    <transition name="" g="360,331:" to="保全复核" id="task-7-task-2*-p0"/>
+  </task>
+  <decision g="229,424,52,52" name="是否复核通过" id="decision-9" expr="#{content}">
+    <transition name="no" g="473,445:" to="复核修改" id="decision-9-task-7*-p0"/>
+    <transition name="yes" g="254,572:" to="结束" id="decision-9-end-4*-p0"/>
+  </decision>
+</process>

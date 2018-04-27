@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.QueryCustomerServiceMapper">
+	
+	<!-- 根据手机号与邮箱查询核心系统客户信息 -->
+	<select id="queryCustomerInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+		<!-- SELECT  
+				a.CUSTOMER_NO 															"custNo",
+        		a.CHN_NAME 																"name", 
+        		pkg_common.FUNC_GET_CODE_NAME('idType',a.ID_TYPE) 						"cardType", 
+        		a.ID_NO 																"cardNo", 
+			  	a.SEX 																	"gender",
+			  	to_char(a.BIRTHDAY,'YYYY-MM-DD hh24:mi:ss')								"birthday",
+			  	b.MOBILE 																"mobile",
+			  	b.EMAIL																	"email",
+        		b.QQ																	"qq",
+        		pkg_common.FUNC_GET_CODE_NAME('marriageStatus', c.MARRIAGE)				"marryState",
+        		pkg_common.FUNC_GET_CODE_NAME('education',c.DEGREE)					 	"education",
+        		pkg_common.FUNC_GET_CODE_NAME('workType',c.WORK_TYPE)					"workType",
+        		pkg_common.FUNC_GET_CODE_NAME('occupationType',c.OCCUPATION_CODE)		"occupationCode",
+        		c.POSITION								 								"position",
+        		c.COMPANY_NAME						 									"workUnit",
+        		DECODE(c.ANNUAL_INCOME, null, '0', c.ANNUAL_INCOME)						"annualIncome",
+        		e.AGENT_CODE 															"agentCode"
+		FROM    
+							T_CUST_BASE_INFO a   
+				LEFT JOIN   T_CUST_CONTACT_INFO   b      ON    a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID AND b.RC_STATE='E'
+			    LEFT JOIN   T_CUST_OTH_INFO       c      ON    a.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID AND c.RC_STATE='E'
+			    LEFT JOIN	T_CUST_ADDRESS_INFO   d      ON    a.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID AND d.RC_STATE='E'
+			    LEFT JOIN   T_AGENT 			  e      ON    c.AGENT_ID = e.AGENT_ID                   AND e.RC_STATE='E'   
+		WHERE 
+			  	a.RC_STATE = 'E' AND  b.MOBILE = #{receiveMobile}  AND  b.EMAIL = #{email} -->
+			  	
+			  	
+<!--s-->
+			  			  	
+		SELECT  
+				a.CUSTOMER_NO 														"custNo",
+        		a.CHN_NAME 															"name", 
+        		FUNC_GET_CODE_NAME('idType',a.ID_TYPE) 					"cardType", 
+        		a.ID_NO 															"cardNo", 
+						FUNC_GET_CODE_NAME('sex', a.Sex) 						"gender",
+			   	IF(DATE_FORMAT(a.BIRTHDAY,'%Y-%m-%d %H:%i:%S')= null, '1800-01-01 00:00:00', DATE_FORMAT(a.BIRTHDAY,'%Y-%m-%d %H:%i:%S'))	"birthday",
+			   	IF(DATE_FORMAT(a.id_validity_date,'%Y-%m-%d %H:%i:%S')=null, '1800-01-01 00:00:00', DATE_FORMAT(a.id_validity_date,'%Y-%m-%d %H:%i:%S'))			"cardNoDate",
+			  	b.MOBILE 															"mobile",
+			  	b.EMAIL																"email",
+        		b.QQ																"qq",
+        		FUNC_GET_CODE_NAME('marriageStatus', c.MARRIAGE)			"marryState",
+        		FUNC_GET_CODE_NAME('education',c.DEGREE)					 "education",
+        		FUNC_GET_CODE_NAME('workType',c.WORK_TYPE)				"workType",
+        		FUNC_GET_CODE_NAME('occupationType',c.OCCUPATION_CODE)	"occupationCode",
+        		c.POSITION								 							"position",
+        		c.COMPANY_NAME						 								"workUnit",
+        		IF(c.ANNUAL_INCOME=null, '0', c.ANNUAL_INCOME)					"annualIncome",
+        		e.AGENT_CODE 														"agentCode",
+        		f.bank_acc_no														"bankNo",
+        		f.bank_code															"openBankName",
+        		f.branch_bank_name													"openBranchName",
+        		f.acc_name															"openAccountName"
+		FROM    
+							T_CUST_BASE_INFO 	  a   
+				INNER JOIN   (SELECT * FROM T_CUST_CONTACT_INFO  WHERE RC_STATE = 'E') b      ON    (a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID AND a.AGENT_ID = b.AGENT_ID)
+			    LEFT JOIN   (SELECT * FROM T_CUST_OTH_INFO      WHERE RC_STATE = 'E') c       ON    a.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+			    LEFT JOIN   (SELECT * FROM T_AGENT 			    WHERE RC_STATE = 'E') e       ON    c.AGENT_ID = e.AGENT_ID
+			    LEFT JOIN   (SELECT * FROM t_cust_acc_info      WHERE RC_STATE = 'E') f       ON    f.cust_base_info_id = a.cust_base_info_id
+		WHERE 
+			  	b.MOBILE = #{receiveMobile}  AND b.EMAIL = #{email}
+			AND a.RC_STATE='E'
+	</select>
+	
+	<!-- 根据手机号查询核心系统客户信息 -->
+	<select id="queryCustomerInfoOnlyByMobile" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+	
+	<!--s-->
+	
+		SELECT  
+				a.CUSTOMER_NO 															"custNo",
+        		a.CHN_NAME 																"name", 
+        		FUNC_GET_CODE_NAME('idType',a.ID_TYPE) 						"cardType", 
+        		a.ID_NO 																"cardNo", 
+			  	FUNC_GET_CODE_NAME('sex', a.Sex) 							"gender",
+			   	IF(DATE_FORMAT(a.BIRTHDAY,'%Y-%m-%d %H:%i:%S')= null, '1800-01-01 00:00:00', DATE_FORMAT(a.BIRTHDAY,'%Y-%m-%d %H:%i:%S'))			"birthday",
+			   	IF(DATE_FORMAT(a.id_validity_date,'%Y-%m-%d %H:%i:%S')=null, '1800-01-01 00:00:00',DATE_FORMAT(a.id_validity_date,'%Y-%m-%d %H:%i:%S'))			"cardNoDate",
+			  	b.MOBILE 																"mobile",
+			  	b.EMAIL																	"email",
+        		b.QQ																	"qq",
+        		FUNC_GET_CODE_NAME('marriageStatus', c.MARRIAGE)				"marryState",
+        		FUNC_GET_CODE_NAME('education',c.DEGREE)					 	"education",
+        		FUNC_GET_CODE_NAME('workType',c.WORK_TYPE)					"workType",
+        		FUNC_GET_CODE_NAME('occupationType',c.OCCUPATION_CODE)		"occupationCode",
+        		c.POSITION								 								"position",
+        		c.COMPANY_NAME						 									"workUnit",
+        		IF(c.ANNUAL_INCOME=null, '0', c.ANNUAL_INCOME)						"annualIncome",
+        		e.AGENT_CODE 															"agentCode",
+        		f.bank_acc_no														"bankNo",
+        		f.bank_code															"openBankName",
+        		f.branch_bank_name													"openBranchName",
+        		f.acc_name															"openAccountName"
+		FROM    
+							T_CUST_BASE_INFO      a   
+				INNER JOIN  (SELECT * FROM T_CUST_CONTACT_INFO WHERE RC_STATE = 'E')  b      ON    (a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID AND a.AGENT_ID = b.AGENT_ID)
+			    LEFT JOIN   (SELECT * FROM T_CUST_OTH_INFO     WHERE RC_STATE = 'E')  c      ON    a.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+			    LEFT JOIN   (SELECT * FROM T_AGENT 			   WHERE RC_STATE = 'E')  e      ON    c.AGENT_ID = e.AGENT_ID
+			    LEFT JOIN   (SELECT * FROM t_cust_acc_info      WHERE RC_STATE = 'E') f       ON    f.cust_base_info_id = a.cust_base_info_id
+		WHERE 
+			  	b.MOBILE = #{receiveMobile}
+			AND a.RC_STATE='E'
+	</select>
+	
+	<!-- 根据邮箱查询核心系统客户信息 -->
+	<select id="queryCustomerInfoOnlyByEmail" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+	
+	<!--s-->
+	
+		SELECT  
+				a.CUSTOMER_NO 															"custNo",
+        		a.CHN_NAME 																"name", 
+        		FUNC_GET_CODE_NAME('idType',a.ID_TYPE) 						"cardType", 
+        		a.ID_NO 																"cardNo", 
+			  	FUNC_GET_CODE_NAME('sex', a.Sex)								"gender",
+			   	IF(DATE_FORMAT(a.BIRTHDAY,'%Y-%m-%d %H:%i:%S')=null, '1800-01-01 00:00:00', DATE_FORMAT(a.BIRTHDAY,'%Y-%m-%d %H:%i:%S'))			"birthday",
+			   	IF(DATE_FORMAT(a.id_validity_date,'%Y-%m-%d %H:%i:%S')=null, '1800-01-01 00:00:00', DATE_FORMAT(a.id_validity_date,'%Y-%m-%d %H:%i:%S'))			"cardNoDate",
+			  	b.MOBILE 																"mobile",
+			  	b.EMAIL																	"email",
+        		b.QQ																	"qq",
+        		FUNC_GET_CODE_NAME('marriageStatus', c.MARRIAGE)				"marryState",
+        		FUNC_GET_CODE_NAME('education',c.DEGREE)					 	"education",
+        		FUNC_GET_CODE_NAME('workType',c.WORK_TYPE)					"workType",
+        		FUNC_GET_CODE_NAME('occupationType',c.OCCUPATION_CODE)		"occupationCode",
+        		c.POSITION								 								"position",
+        		c.COMPANY_NAME						 									"workUnit",
+        		IF(c.ANNUAL_INCOME=null, '0', c.ANNUAL_INCOME)						"annualIncome",
+        		e.AGENT_CODE 															"agentCode",
+        		f.bank_acc_no														"bankNo",
+        		f.bank_code															"openBankName",
+        		f.branch_bank_name													"openBranchName",
+        		f.acc_name															"openAccountName"
+		FROM    
+							T_CUST_BASE_INFO 	  a   
+				INNER JOIN  (SELECT * FROM T_CUST_CONTACT_INFO WHERE RC_STATE = 'E')  b      ON    (a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID AND a.AGENT_ID = b.AGENT_ID)
+			    LEFT JOIN   (SELECT * FROM T_CUST_OTH_INFO     WHERE RC_STATE = 'E')  c      ON    a.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+			    LEFT JOIN   (SELECT * FROM T_AGENT 			   WHERE RC_STATE = 'E')  e      ON    c.AGENT_ID = e.AGENT_ID      
+			    LEFT JOIN   (SELECT * FROM t_cust_acc_info      WHERE RC_STATE = 'E') f       ON    f.cust_base_info_id = a.cust_base_info_id             
+		WHERE 
+			  	b.EMAIL = #{email}
+			AND a.RC_STATE='E'
+	</select>
+	
+	<!-- 地址信息查询 -->
+	<select id="queryAddressInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+	
+	<!--s-->
+	
+		SELECT b.address_type 										"addressType", 
+			   FUNC_GET_PLACE_NAME('01',b.PROVINCE)  	"province", 
+			   FUNC_GET_PLACE_NAME('02',b.City)  		"city",
+          	   FUNC_GET_PLACE_NAME('03',b.Country)   	"area",
+          	   b.Street    											"street"
+		FROM 
+   			   			 T_CUST_BASE_INFO     a 
+   			   LEFT JOIN (SELECT * FROM T_CUST_ADDRESS_INFO WHERE RC_STATE = 'E') b    ON   a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID
+		WHERE a.customer_no = #{custNo}
+		  AND a.RC_STATE = 'E'
+	</select>
+	
+	<!-- 根据"客户ID"获取"理财师"详细信息 -->
+	<select id="queryAgentBaseInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+	
+	 <!--S-->
+	 
+		SELECT
+			  c.AGENT_ID										"agentId",
+			  c.AGENT_CODE   									"agentCode",
+			  c.agent_name 										"agentName",
+			  d.store_name 										"storeName",
+			  FUNC_GET_PLACE_NAME('01',d.province)   "province",
+			  FUNC_GET_PLACE_NAME('02',d.city)       "city",
+			  FUNC_GET_PLACE_NAME('03',d.country)    "area",
+			  d.street   										"street",
+			  FUNC_GET_CODE_NAME('sex',c.sex)        "agentGender",
+			  c.mobile 											"telephone",
+			  cast(FLOOR(TIMESTAMPDIFF(MONTH, c.JOIN_DATE,now())/12) as SIGNED) 	"workingYears"
+		FROM
+				   T_CUST_BASE_INFO 	a  
+		LEFT JOIN  (SELECT * FROM T_AGENT       WHERE RC_STATE = 'E')  c       ON a.agent_id = c.agent_id                   
+		LEFT JOIN  (SELECT * FROM T_DEF_STORE   WHERE RC_STATE = 'E')  d        ON c.store_id = d.store_id                   
+		WHERE 	a.customer_no = #{customerId} 
+			AND a.RC_STATE = 'E'
+	</select>
+	
+	<!-- 根据邀请码与手机号查询邀请码状态与交易信息 -->
+	<select id="queryProductOrderInfoByMobileNumAndInviteCode" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+	
+	  <!--s-->
+	  
+		SELECT  
+				a.PD_AMOUNT_ORDER_INFO_ID	"pdAmountOrderInfoId",
+				a.ORDER_STATUS 				"orderState",
+		        b.PRODUCT_CODE 				"ProductCode",
+		        c.AGENT_CODE				"AgentId",
+		        a.ORDER_AMOUNT 				"TradeAmount"
+		FROM    
+				T_PD_AMOUNT_ORDER_INFO a 
+			LEFT JOIN 
+				(SELECT * FROM T_PD_PRODUCT WHERE RC_STATE = 'E') b ON a.PRODUCT_ID = b.PRODUCT_ID
+			LEFT JOIN
+				(SELECT * FROM T_AGENT WHERE RC_STATE = 'E')      c ON a.AGENT_ID = c.AGENT_ID 
+		WHERE   a.INVITE_CODE = #{inviteCode} and a.mobile = #{mobile}
+		 	and a.RC_STATE = 'E' 
+	</select>
+	
+	<!-- 根据邀请码查询订单信息 -->
+	<select id="queryProductOrderInfoByInviteCode" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+	
+	  <!--s-->
+	  
+		SELECT  
+				a.PD_AMOUNT_ORDER_INFO_ID	"pdAmountOrderInfoId",
+				a.ORDER_STATUS 				"orderState",
+		        b.PRODUCT_CODE 				"productCode",
+		        c.AGENT_CODE				"agentId",
+		        a.ORDER_AMOUNT 				"tradeAmount"
+		FROM    T_PD_AMOUNT_ORDER_INFO a 
+			LEFT JOIN 
+				(SELECT * FROM T_PD_PRODUCT WHERE RC_STATE = 'E' )  b  ON a.PRODUCT_ID = b.PRODUCT_ID
+			LEFT JOIN
+				(SELECT * FROM T_AGENT WHERE RC_STATE = 'E')       c   ON a.AGENT_ID = c.AGENT_ID
+		WHERE   a.INVITE_CODE = #{inviteCode}
+		    and a.RC_STATE = 'E' 
+	</select>
+	
+	<!-- 根据绿城客户号查询其姓名信息 -->
+	<select id="queryCustomerName" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+		<!-- 测试版本1：SQL语句 -->
+		SELECT    '赵文强' 	"name"
+	</select>
+	
+	<!-- 根据绿城客户号查询其订单信息 -->
+	<select id="queryeweatlthProductOrder" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+		<!-- 实际生产SQL语句 -->
+		<!-- 测试版本1：SQL语句 -->
+		SELECT    '01' 	"orderNo",
+				  '01'	"productName",
+				  '01'	"mechanism",
+				  '01'	"totalAmount",
+				  '01'	"investmentDate",
+				  '01'	"yield",
+				  '01'	"establishDate",
+				  '01'	"state"
+	</select>
+	
+	<!-- 根据绿城客户号查询其订单信息 -->
+	<select id="queryAgentInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+		<!-- 实际生产SQL语句 -->
+		<!-- 测试版本1：SQL语句 -->
+		SELECT    AGENT_CODE	"agentCode"
+		FROM      T_AGENT
+		WHERE     AGENT_CODE = #{agentCode} AND T_AGENT.RC_STATE = 'E'
+	</select>
+</mapper>

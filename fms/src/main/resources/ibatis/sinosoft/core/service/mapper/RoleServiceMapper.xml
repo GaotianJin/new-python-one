@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+  
+<mapper namespace="com.sinosoft.core.service.mapper.RoleServiceMapper">
+    <select id="queryPrivilageByRoleID" parameterType="com.sinosoft.core.db.model.DefPrivilege" resultType="com.sinosoft.core.db.model.DefPrivilege">
+         select 
+         		tdp.PRIVILEGE_ID	privilegeId,
+				tdp.PRIVILEGE_CODE	privilegeCode,
+				tdp.PRIVILEGE_NAME	privilegeName,
+				tdp.PRIVILEGE_TYPE	privilegeType,
+				tdp.URL				url,
+				tdp.PID				pid,
+				tdp.METHOD			method,
+				tdp.PRE				pre,
+				tdp.NEXT			next,
+				tdp.NUM				num,
+				tdp.RC_STATE		rcState,
+				tdp.CREATE_DATE		createDate,
+				tdp.MODIFY_DATE		modifyDate,
+				tdp.OPER_COM_ID		operComId,
+				tdp.CREATE_USER_ID	createUserId,
+				tdp.MODIFY_USER_ID	createUserId
+		  from t_def_privilege tdp
+		 inner join t_def_role_privilege_rela tdrpr
+		    on tdp.privilege_id = tdrpr.privilege_id
+		   and tdrpr.rc_state = 'E'
+		 inner join t_def_role tdr
+		    on tdrpr.role_id = tdr.role_id
+		   and tdr.rc_state='E'
+		 where tdp.rc_state='E'
+		 and tdr.role_id = #{roleId} 
+    </select>   
+    
+    
+    <select id="queryRoleByRoleCode" parameterType="com.sinosoft.core.db.model.DefRole" resultType="com.sinosoft.core.db.model.DefRole">
+        select tdr.role_id  "roleId",
+		       tdr.role_code "roleCode",
+		       tdr.role_name "roleName",
+		       tdr.role_privilege "rolePrivilege",
+		       tdr.rc_state       "rcState",
+		       tdr.create_date    "createDate",
+		       tdr.modify_date    "modifyDate",
+		       tdr.oper_com_id    "operComId",
+		       tdr.create_user_id "createUserId",
+		       tdr.modify_user_id "createUserId"
+		  from t_def_role tdr
+		  where tdr.rc_state='E'
+		  and tdr.role_code = #{roleCode} 
+    </select> 
+    
+    <select id="queryRoleByRoleName" parameterType="com.sinosoft.core.db.model.DefRole" resultType="com.sinosoft.core.db.model.DefRole">
+        select tdr.role_id  "roleId",
+		       tdr.role_code "roleCode",
+		       tdr.role_name "roleName",
+		       tdr.role_privilege "rolePrivilege",
+		       tdr.rc_state       "rcState",
+		       tdr.create_date    "createDate",
+		       tdr.modify_date    "modifyDate",
+		       tdr.oper_com_id    "operComId",
+		       tdr.create_user_id "createUserId",
+		       tdr.modify_user_id "createUserId"
+		  from t_def_role tdr
+		  where tdr.rc_state='E'
+		  and tdr.role_name = #{roleName}
+    </select>   
+    
+    <sql id="queryRoleListInfoSQL">
+    
+    	select 
+    	(SELECT @rownum := 0),
+    	tdr.role_id  "roleId",
+		       tdr.role_code "roleCode",
+		       tdr.role_name "roleName",
+		       tdr.role_Privilege  "rolePrivilegeId",
+		       tdc.code_name "rolePrivilege"
+		  from t_def_role tdr
+		  left join t_def_code tdc
+		  on tdc.code_type='rolePrivilege'
+		  and tdc.code=tdr.role_privilege
+		  where tdr.rc_state='E'
+    	<if test="roleCode!=null and roleCode!=''">
+		   	and tdr.role_code like '%${roleCode}%'
+		</if>
+		<if test="roleName!=null and roleName!=''">
+		   	and tdr.role_name like '%${roleName}%'
+		</if>
+		<if test="rolePrivilege!=null and rolePrivilege!=''">
+		   	and tdr.role_Privilege like '%${rolePrivilege}%'
+		</if>
+    </sql>
+    
+     <!-- 菜单信息列表查询（总记录数） -->
+	<select id="queryRoleListInfoCounts" resultType="java.lang.Integer" parameterType="java.util.Map" >
+		select count(1) from 
+		(
+      	  	<include refid="queryRoleListInfoSQL"/>
+        )a
+	</select>
+	
+	<!-- 菜单信息列表查询（分页查询） -->
+	<select id="queryRoleListInfoPages" resultType="java.util.Map" parameterType="java.util.Map" >
+        select tAlias.* from
+		(
+	         select nAlias.*, @rownum:=@rownum+1 r_rownum from
+	         (
+		         <include refid="queryRoleListInfoSQL"/>
+		         
+			 ) nAlias
+		) tAlias where r_rownum >=#{queryStartIndex} and #{queryEndIndex} >= r_rownum
+	</select>
+    
+</mapper>  

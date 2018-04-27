@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fms.service.mapper.IncomeDisServiceMapper">
+
+	<select id="getAllProductDisInfo" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	<!--s-->
+	
+		SELECT A.PRODUCT_ID "productId",A.PRODUCT_NAME "productName",date_format(C.DISTRIBUTE_DATE,'%Y-%m-%d') "distributeDate",
+		       date_format(C.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+		       date_format(C.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+		       IFNULL(C.PRINCIPAL_DISTRIBUTE_RATE,0) "principalDistributeRate"
+		FROM T_PD_PRODUCT A,T_PD_WEALTH B,T_PD_WEALTH_INCOME_DIS C
+		WHERE A.PRODUCT_ID = B.PRODUCT_ID
+		      AND B.PD_WEALTH_ID = C.PD_WEALTH_ID                            
+		      AND A.PRODUCT_TYPE = '1'
+		      AND A.PRODUCT_SUB_TYPE = '02'
+		      AND C.DISTRIBUTE_DATE <![CDATA[<=]]> adddate(curdate(), '+7 days')
+		      AND NOT EXISTS(SELECT 'X' FROM T_PD_INCOME_DIS D WHERE D.PD_PRODUCT_ID = A.PRODUCT_ID 
+		                            AND D.DISTRIBUTE_DATE = C.DISTRIBUTE_DATE
+		                            AND D.DISTRIBUTE_START_DATE = C.DISTRIBUTE_START_DATE 
+		                            AND D.DISTRIBUTE_END_DATE = C.DISTRIBUTE_END_DATE
+		                            AND D.RC_STATE = 'E')
+		      AND A.RC_STATE = 'E'
+		      AND B.RC_STATE = 'E'
+		      AND C.RC_STATE = 'E'
+	</select>
+	<select id="getProductDisInfo" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	
+		SELECT A.PRODUCT_ID "productId",A.PRODUCT_NAME "productName",date_format(C.DISTRIBUTE_DATE,'%Y-%m-%d') "distributeDate",
+		       date_format(C.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+		       date_format(C.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+		       IFNULL(C.PRINCIPAL_DISTRIBUTE_RATE,0) "principalDistributeRate"
+		FROM T_PD_PRODUCT A,T_PD_WEALTH B,T_PD_WEALTH_INCOME_DIS C
+		WHERE A.PRODUCT_ID = B.PRODUCT_ID
+		      AND B.PD_WEALTH_ID = C.PD_WEALTH_ID                            
+		      AND A.PRODUCT_TYPE = '1'
+		      AND A.PRODUCT_SUB_TYPE = '02'
+		      AND A.PRODUCT_ID = #{productId}
+		      <!-- AND C.DISTRIBUTE_DATE <![CDATA[<=]]> adddate(curdate(), '+7 days')
+		      AND NOT EXISTS(SELECT 'X' FROM T_PD_INCOME_DIS D WHERE D.PD_PRODUCT_ID = A.PRODUCT_ID 
+		                            AND D.DISTRIBUTE_DATE = C.DISTRIBUTE_DATE
+		                            AND D.DISTRIBUTE_START_DATE = C.DISTRIBUTE_START_DATE 
+		                            AND D.DISTRIBUTE_END_DATE = C.DISTRIBUTE_END_DATE
+		                            AND D.RC_STATE = 'E') -->
+		      AND A.RC_STATE = 'E'
+		      AND B.RC_STATE = 'E'
+		      AND C.RC_STATE = 'E'
+	</select>
+	<select id="getAllNotDueProductDisInfo" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	<!--s-->
+	
+		SELECT A.PRODUCT_ID "productId",A.PRODUCT_NAME "productName",date_format(C.DISTRIBUTE_DATE,'%Y-%m-%d') "distributeDate",
+		       date_format(C.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+		       date_format(C.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+		    CONCAT(round(IFNULL(C.PRINCIPAL_DISTRIBUTE_RATE,0)),'','') "principalDistributeRate",
+		      CONCAT(IFNULL(ROUND((SELECT
+SUM(v.subscriptionFee*IFNULL(C.PRINCIPAL_DISTRIBUTE_RATE,0)/100)/10000
+FROM
+t_trade_info x,
+t_trade_product_info_view v,
+t_pd_wealth_fee_rate y
+WHERE
+x.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND a.PRODUCT_ID = v.PRODUCT_ID
+AND b.PD_WEALTH_ID = y.PD_WEALTH_ID
+AND
+								(		
+						CASE
+						WHEN v.beneficialType IS NOT NULL
+						THEN v.beneficialType = y.BENEFICIAL_TYPE
+						ELSE 1=1
+						END
+						)
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+),2),0),'','万') "incomeDisTotal"
+		FROM T_PD_PRODUCT A,T_PD_WEALTH B,T_PD_WEALTH_INCOME_DIS C
+		WHERE A.PRODUCT_ID = B.PRODUCT_ID
+		      AND B.PD_WEALTH_ID = C.PD_WEALTH_ID                            
+		      AND A.PRODUCT_TYPE = '1'
+		      AND A.PRODUCT_SUB_TYPE = '02'
+		      AND C.DISTRIBUTE_DATE <![CDATA[>]]> CURDATE()
+		      AND A.RC_STATE = 'E'
+		      AND B.RC_STATE = 'E'
+		      AND C.RC_STATE = 'E'
+		      ORDER BY distributeDate
+	</select>
+	<select id="getMaxDistributeDate" parameterType="java.util.Map" resultType="java.util.Map">
+					SELECT
+				max(a.DISTRIBUTE_DATE) "maxDate"
+				FROM
+				t_pd_wealth_income_dis a,
+				t_pd_product b,
+				t_pd_wealth c
+				WHERE
+				a.PD_WEALTH_ID = c.PD_WEALTH_ID
+				AND b.PRODUCT_ID = c.PRODUCT_ID
+				AND b.PRODUCT_ID = #{productId}
+				AND a.RC_STATE = 'E'
+				AND c.RC_STATE = 'E'
+				AND b.RC_STATE = 'E'
+	</select>
+	<select id="getAllTradeInfoByProductId" parameterType="java.util.Map" resultType="java.util.Map">
+		<!-- SELECT A.TRADE_INFO_ID "tradeInfoId",A.AGENT_ID "agentId",C.CUST_BASE_INFO_ID "custBaseInfoId",
+	           NVL(D.ACTU_SUBSCRIPTION_AMOUNT,0) "actuSubscriptionAmount",
+	           NVL(D.SUBSCRIPTION_COPIES,0) "subscriptionCopies",
+	           (F.EXPECTED_FEE_RATE+NVL(F.ADD_EXPECTED_FEE_RATE,0)) "expectFeeRate",G.CUST_ACC_INFO_ID "custAccInfoId"
+	    FROM T_TRADE_INFO A,T_TRADE_PRODUCT_INFO_VIEW B,T_TRADE_CUST_INFO C,T_TRADE_STATUS_INFO D,
+	         T_PD_WEALTH E,T_PD_WEALTH_FEE_RATE F,T_TRADE_CUST_ACC_RELA G
+	    WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+		    AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+		    AND A.TRADE_INFO_ID = D.TRADE_INFO_ID
+		    AND B.PRODUCT_ID = E.PRODUCT_ID
+		    AND E.PD_WEALTH_ID = F.PD_WEALTH_ID
+		    AND C.TRADE_CUST_INFO_ID = G.TRADE_CUST_INFO_ID
+		    AND G.TRADE_ACC_FLAG = '1'
+		    AND NVL(F.SUBSCRIPTION_FEE_LOWER,0)<![CDATA[<=]]>D.ACTU_SUBSCRIPTION_AMOUNT
+		    AND NVL(F.SUBSCRIPTION_FEE_UPPER,9999999999)<![CDATA[>]]>D.ACTU_SUBSCRIPTION_AMOUNT
+		    AND A.TRADE_TYPE = '1'
+		    AND A.TRADE_STAUS = '10'
+		    AND F.FEE_TYPE = '01'
+		    AND B.PRODUCT_ID = #{productId}
+		    AND A.RC_STATE = 'E'
+		    AND C.RC_STATE = 'E'
+		    AND D.RC_STATE = 'E'
+		    AND E.RC_STATE = 'E'
+		    AND F.RC_STATE = 'E'
+		    AND G.RC_STATE = 'E' -->
+		    
+		    <!--s-->
+		    
+		    
+		SELECT A.TRADE_INFO_ID "tradeInfoId",A.AGENT_ID "agentId",C.CUST_BASE_INFO_ID "custBaseInfoId",
+	             IFNULL(D.ACTU_SUBSCRIPTION_AMOUNT,0) "actuSubscriptionAmount",
+								IFNULL(D.SUBSCRIPTION_COPIES,0) "subscriptionCopies",           
+	             F.EXPECTED_FEE_RATE "expectFeeRate",
+	            G.CUST_ACC_INFO_ID "custAccInfoId"
+	      FROM T_TRADE_INFO A,T_TRADE_PRODUCT_INFO_VIEW B,T_TRADE_CUST_INFO C,T_TRADE_STATUS_INFO D,
+	           T_PD_WEALTH E,T_TRADE_CUST_ACC_RELA G,T_PD_WEALTH_FEE_RATE F 
+	      WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	        AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+	        AND A.TRADE_INFO_ID = D.TRADE_INFO_ID
+	        AND B.PRODUCT_ID = E.PRODUCT_ID
+	        AND C.TRADE_CUST_INFO_ID = G.TRADE_CUST_INFO_ID
+	        AND F.PD_WEALTH_ID = E.PD_WEALTH_ID
+	        AND
+								(		
+						CASE
+						WHEN B.beneficialType IS NOT NULL
+						THEN B.beneficialType = F.BENEFICIAL_TYPE
+						ELSE 1=1
+						END
+						)
+	        AND G.TRADE_ACC_FLAG = '1'
+	        AND A.TRADE_TYPE = '1'
+	         AND A.TRADE_STAUS in ('10','12','11','13','14') 
+	        AND B.PRODUCT_ID = #{productId}
+	        AND A.RC_STATE = 'E'
+	        AND C.RC_STATE = 'E'
+	        AND D.RC_STATE = 'E'
+	        AND E.RC_STATE = 'E'
+	        AND F.RC_STATE = 'E'
+	        AND G.RC_STATE = 'E'
+	</select>
+	
+	<select id="getTradeInfoByProductId" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT A.TRADE_INFO_ID "tradeInfoId",A.AGENT_ID "agentId",C.CUST_BASE_INFO_ID "custBaseInfoId",
+	             IFNULL(D.ACTU_SUBSCRIPTION_AMOUNT,0) "actuSubscriptionAmount",
+								IFNULL(D.SUBSCRIPTION_COPIES,0) "subscriptionCopies",           
+	            F.EXPECTED_FEE_RATE + IFNULL(F.ADD_EXPECTED_FEE_RATE, 0) "expectFeeRate",
+	            G.CUST_ACC_INFO_ID "custAccInfoId"
+	      FROM T_TRADE_INFO A,T_TRADE_PRODUCT_INFO_VIEW B,T_TRADE_CUST_INFO C,T_TRADE_STATUS_INFO D,
+	           T_PD_WEALTH E,T_PD_WEALTH_FEE_RATE F,T_TRADE_CUST_ACC_RELA G
+	      WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	        AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+	        AND A.TRADE_INFO_ID = D.TRADE_INFO_ID
+	        AND B.PRODUCT_ID = E.PRODUCT_ID
+	        AND F.PD_WEALTH_ID = E.PD_WEALTH_ID
+	        AND C.TRADE_CUST_INFO_ID = G.TRADE_CUST_INFO_ID
+	        AND G.TRADE_ACC_FLAG = '1'
+	        AND A.TRADE_TYPE = '1'
+	        AND A.TRADE_STAUS = '13'
+	        AND B.PRODUCT_ID = #{productId}
+	        AND
+								(		
+						CASE
+						WHEN B.beneficialType IS NOT NULL
+						THEN B.beneficialType = F.BENEFICIAL_TYPE
+						ELSE 1=1
+						END
+						)
+	        AND A.RC_STATE = 'E'
+	        AND C.RC_STATE = 'E'
+	        AND D.RC_STATE = 'E'
+	        AND E.RC_STATE = 'E'
+	        AND F.RC_STATE = 'E'
+	        AND G.RC_STATE = 'E'
+	</select>
+	<sql id="queryProductIncomeDistibuteListCondition">
+		<if test="productId != null and productId !=''" >
+      		AND A.PD_PRODUCT_ID = #{productId}
+    	</if>
+    	<if test="distributeStartDate != null and distributeStartDate !=''" >
+      		AND A.DISTRIBUTE_DATE <![CDATA[>=]]> STR_TO_DATE('${distributeStartDate}','%Y-%m-%d')
+    	</if>
+    	<if test="distributeEndDate != null and distributeEndDate !=''" >
+      		AND A.DISTRIBUTE_DATE <![CDATA[<=]]> STR_TO_DATE('${distributeEndDate}','%Y-%m-%d')
+    	</if>
+	</sql>
+
+	<select id="queryProductIncomeDistibuteList" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	  <!--s-->
+		select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+			SELECT (SELECT @rownum := 0),
+			       A.PD_INCOME_DISTRIBUTE_ID "pdIncomeDistributeId",B.PRODUCT_ID "productId",
+				   B.PRODUCT_NAME "productName",DATE_FORMAT(A.DISTRIBUTE_DATE,'%Y-%m-%d') "distributeDate",
+			       DATE_FORMAT(A.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+			       DATE_FORMAT(A.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+			       A.DISTRIBUTE_TOTAL_INTEREST "distributeTotalInterest",
+			       A.DISTRIBUTE_TOTAL_PRINCIPAL "distributeTotalPrincipal",
+			       A.DISTRIBUTE_PRINCIPAL_RATE "distributePrincipalRate",
+			       A.DISTRIBUTE_STATUS "distributeStatus",
+			       FUNC_GET_CODE_NAME('distributeStatus',A.DISTRIBUTE_STATUS) "distributeStatusName",
+			       '收益分配报表下载' as "operation"
+			FROM T_PD_INCOME_DIS A,T_PD_PRODUCT B
+			WHERE A.PD_PRODUCT_ID = B.PRODUCT_ID
+				<include refid="queryProductIncomeDistibuteListCondition"/>
+				AND A.RC_STATE = 'E'
+				AND B.RC_STATE = 'E'
+				AND A.DISTRIBUTE_STATUS in ('01','02')
+				order by A.PD_PRODUCT_ID,A.DISTRIBUTE_DATE 
+ 			) nAlias
+		) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+	</select>
+
+	<select id="queryProductIncomeDistibuteListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_PD_INCOME_DIS A,T_PD_PRODUCT B
+		WHERE A.PD_PRODUCT_ID = B.PRODUCT_ID
+		<include refid="queryProductIncomeDistibuteListCondition"/>
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+		AND A.DISTRIBUTE_STATUS in ('01','02')
+	</select>
+
+	<sql id="queryProductIncomeDistibuteDetailListCondition">
+		<if test="custName != null and custName !=''" >
+      		AND E.CHN_NAME LIKE '%${custName}%'
+    	</if>
+    	<if test="agencyComId != null and agencyComId !=''" >
+      		AND F.AGENCY_COM_ID = #{agencyComId}
+    	</if>
+    	<if test="productId != null and productId !=''" >
+      		AND F.PRODUCT_ID = #{productId}
+    	</if>
+    	<if test="distributeStartDate != null and distributeStartDate !=''" >
+      		AND A.DISTRIBUTE_DATE <![CDATA[>=]]>STR_TO_DATE('${distributeStartDate}','%Y-%m-%d')
+    	</if>
+    	<if test="distributeEndDate != null and distributeEndDate !=''" >
+      		AND A.DISTRIBUTE_DATE <![CDATA[<=]]> STR_TO_DATE('${distributeEndDate}','%Y-%m-%d')
+    	</if>
+	</sql>
+
+	<select id="queryProductIncomeDistibuteDetailList" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	 <!--s-->
+		select tAlias.* from(
+	         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+	         	(
+				SELECT (SELECT @rownum := 0),
+				       B.TRADE_INFO_ID "tradeInfoId",C.TRADE_NO "tradeNo",E.CUST_BASE_INFO_ID "custBaseInfoId",
+				       E.CHN_NAME "custName",F.PRODUCT_ID "productId",F.PRODUCT_NAME "productName",
+				       DATE_FORMAT(G.FOUND_DATE,'%Y-%m-%d') "foundDate",H.ACTU_SUBSCRIPTION_AMOUNT "actuSubscriptionAmount",
+				       B.DISTRIBUTE_INTEREST "distributeInterest",B.DISTRIBUTE_PRINCIPAL "distributePrincipal",
+				       A.DISTRIBUTE_PRINCIPAL_RATE "distributePrincipalRate",
+				       (B.DISTRIBUTE_INTEREST+B.DISTRIBUTE_PRINCIPAL) "tradeDistributeTotal",
+				       DATE_FORMAT(A.DISTRIBUTE_DATE,'%Y-%m-%d') "distributeDate",DATE_FORMAT(A.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+				       DATE_FORMAT(A.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+				       B.AGENCY_DISTRIBUTE_PRINCIPAL "agencyDisPrincipal",B.AGENCY_DISTRIBUTE_INTEREST "agencyDisInterest",
+               		   B.CONFIRM_DISTRIBUTE_PRINCIPAL "confirmDisPrincipal",B.CONFIRM_DISTRIBUTE_INTEREST "confirmDisInterest"
+				FROM T_PD_INCOME_DIS A,T_PD_INCOME_DIS_DETAIL B,T_TRADE_INFO C,T_TRADE_CUST_INFO D,
+				     T_CUST_BASE_INFO E,T_PD_PRODUCT F,T_PD_WEALTH G,T_TRADE_STATUS_INFO H
+				WHERE A.PD_INCOME_DISTRIBUTE_ID = B.PD_INCOME_DISTRIBUTE_ID
+					AND B.TRADE_INFO_ID = C.TRADE_INFO_ID
+					AND C.TRADE_INFO_ID = D.TRADE_INFO_ID
+					AND D.CUST_BASE_INFO_ID = E.CUST_BASE_INFO_ID
+					AND A.PD_PRODUCT_ID = F.PRODUCT_ID
+					AND F.PRODUCT_ID = G.PRODUCT_ID
+					AND C.TRADE_INFO_ID = H.TRADE_INFO_ID
+					AND C.TRADE_STAUS = '10'
+					<include refid="queryProductIncomeDistibuteDetailListCondition"/>
+					AND A.RC_STATE = 'E'
+					AND B.RC_STATE = 'E'
+					AND C.RC_STATE = 'E'
+					AND D.RC_STATE = 'E'
+					AND E.RC_STATE = 'E'
+					AND F.RC_STATE = 'E'
+					AND G.RC_STATE = 'E'
+					AND H.RC_STATE = 'E'
+					AND A.DISTRIBUTE_STATUS='02'
+			) nAlias
+		) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+		<if test="sort != null and sort !=''" >
+	      		ORDER BY "${sort}" ${order} 
+	    </if> 
+	</select>
+
+	<select id="queryProductIncomeDistibuteDetailListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		
+		 <!--s-->
+		 
+		SELECT COUNT(1)
+		FROM T_PD_INCOME_DIS A,T_PD_INCOME_DIS_DETAIL B,T_TRADE_INFO C,T_TRADE_CUST_INFO D,
+		     T_CUST_BASE_INFO E,T_PD_PRODUCT F,T_PD_WEALTH G,T_TRADE_STATUS_INFO H
+		WHERE A.PD_INCOME_DISTRIBUTE_ID = B.PD_INCOME_DISTRIBUTE_ID
+			AND B.TRADE_INFO_ID = C.TRADE_INFO_ID
+			AND C.TRADE_INFO_ID = D.TRADE_INFO_ID
+			AND D.CUST_BASE_INFO_ID = E.CUST_BASE_INFO_ID
+			AND A.PD_PRODUCT_ID = F.PRODUCT_ID
+			AND F.PRODUCT_ID = G.PRODUCT_ID
+			AND C.TRADE_INFO_ID = H.TRADE_INFO_ID
+			AND C.TRADE_STAUS = '10'
+			<include refid="queryProductIncomeDistibuteDetailListCondition"/>
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE = 'E'
+			AND C.RC_STATE = 'E'
+			AND D.RC_STATE = 'E'
+			AND E.RC_STATE = 'E'
+			AND F.RC_STATE = 'E'
+			AND G.RC_STATE = 'E'
+			AND H.RC_STATE = 'E'
+			AND A.DISTRIBUTE_STATUS='02'
+	</select>
+	
+	
+	<select id="getProductIncomeDistributeDetailInfo" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	 <!--s-->
+	 
+		SELECT B.PD_INCOME_DISTRIBUTE_DETAIL_ID "incomeDisDetailId",I.AGENT_CODE "agentCode",I.AGENT_NAME "agentName",
+		       G.CUSTOMER_NO "customerNo",G.CHN_NAME "custName",C.PRODUCT_CODE "productCode",C.PRODUCT_NAME "productName",
+		       /*一个固定收益类产品可能有多个封闭期，这是封闭期是需要在交易中录入的*/
+		       (CASE WHEN(SELECT COUNT(1) FROM T_TRADE_PRODUCT_INFO M WHERE M.TRADE_INFO_ID = E.TRADE_INFO_ID 
+		                         AND M.PRODUCT_ID = A.PD_PRODUCT_ID AND M.PARAM_CODE = 'closedPeriods'
+		                         AND M.RC_STATE = 'E' )>0
+		             THEN(SELECT CONCAT(M.PARAM_VALUE,FUNC_GET_CODE_NAME('closedPeriodUnit',J.CLOSE_DPERIOD_UNIT)) 
+		                         FROM T_TRADE_PRODUCT_INFO M 
+		                         WHERE M.TRADE_INFO_ID = E.TRADE_INFO_ID 
+		                         AND M.PRODUCT_ID = A.PD_PRODUCT_ID AND M.PARAM_CODE = 'closedPeriods'
+		                         AND M.RC_STATE = 'E')
+		             ELSE(CONCAT(J.CLOSE_DPERIODS,FUNC_GET_CODE_NAME('closedPeriodUnit',J.CLOSE_DPERIOD_UNIT)))END)"closedPeriod",
+		       DATE_FORMAT(J.FOUND_DATE,'%Y-%m-%d') "foundDate",
+		       DATE_FORMAT(A.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+		       DATE_FORMAT(A.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+		       (DATEDIFF(A.DISTRIBUTE_END_DATE,A.DISTRIBUTE_START_DATE)+1)"calInterestDays",
+		       (SELECT K.ACTU_SUBSCRIPTION_AMOUNT/10000 FROM T_TRADE_STATUS_INFO K 
+		               WHERE K.TRADE_INFO_ID = E.TRADE_INFO_ID AND K.TRADE_STATUS = '10' AND K.RC_STATE = 'E') "actuSubscriptionAmount",
+		       B.EXPECTED_FEE_RATE "expectedFeeRate",IFNULL(B.DISTRIBUTE_INTEREST,0) "distributeInterest",
+		       A.DISTRIBUTE_PRINCIPAL_RATE "distributePrincipalRate",IFNULL(B.DISTRIBUTE_PRINCIPAL,0) "distributePrincipal",
+		       (B.DISTRIBUTE_INTEREST+B.DISTRIBUTE_PRINCIPAL) "distributeTotal",H.BANK_ACC_NO "bankAccNo",
+		       (SELECT CONCAT(L.BANK_NAME,H.BRANCH_BANK_NAME) FROM T_DEF_BANK L WHERE L.BANK_ID = H.BANK_CODE) "bankName",
+           	   B.AGENCY_DISTRIBUTE_PRINCIPAL "agencyPrincipal",B.AGENCY_DISTRIBUTE_INTEREST "agencyInterest",
+           	   B.CONFIRM_DISTRIBUTE_PRINCIPAL "confirmPrincipal",B.CONFIRM_DISTRIBUTE_INTEREST "confirmInterest"
+		FROM T_PD_INCOME_DIS A,T_PD_INCOME_DIS_DETAIL B,T_PD_PRODUCT C,T_AGENCY_COM D,T_TRADE_INFO E,
+		     T_TRADE_CUST_INFO F,T_CUST_BASE_INFO G,T_CUST_ACC_INFO H,T_AGENT I,T_PD_WEALTH J
+		WHERE A.PD_INCOME_DISTRIBUTE_ID = B.PD_INCOME_DISTRIBUTE_ID
+		      AND A.PD_PRODUCT_ID = C.PRODUCT_ID
+		      AND C.AGENCY_COM_ID = D.AGENCY_COM_ID
+		      AND B.TRADE_INFO_ID = E.TRADE_INFO_ID
+		      AND E.TRADE_INFO_ID = F.TRADE_INFO_ID
+		      AND F.CUST_BASE_INFO_ID = G.CUST_BASE_INFO_ID
+		      AND B.CUST_ACC_INFO_ID = H.CUST_ACC_INFO_ID
+		      AND E.AGENT_ID = I.AGENT_ID
+		      AND C.PRODUCT_ID = J.PRODUCT_ID
+		      AND A.PD_INCOME_DISTRIBUTE_ID = #{pdIncomeDistributeId}
+		      AND A.RC_STATE = 'E'
+		      AND B.RC_STATE = 'E'
+		      AND C.RC_STATE = 'E'
+		      AND D.RC_STATE = 'E'
+		      AND E.RC_STATE = 'E'
+		      AND F.RC_STATE = 'E'
+		      AND G.RC_STATE = 'E'
+		      AND I.RC_STATE = 'E'
+		      AND J.RC_STATE = 'E'
+	</select>
+	
+</mapper>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
+<beans>
+	<bean name="quartzScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean" >
+		<property name="dataSource" ref="jboss_dataSource" />
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="applicationContextSchedulerContextKey" value="applicationContext" />
+		<property name="configLocation" value="classpath:quartz.properties" />
+		<!--这个是必须的，QuartzScheduler 延时启动，应用启动完后 QuartzScheduler 再启动 -->
+		<property name="startupDelay" value="5" />
+		<!--这个是可选，QuartzScheduler 启动时更新己存在的Job，这样就不用每次修改targetObject后删除qrtz_job_details表对应记录了 -->
+		<property name="overwriteExistingJobs" value="true" />
+		<property name="jobDetails">
+			<list>
+				<ref bean="BirthToCustSmsBatch" />
+				<ref bean="BirthToAgentSmsBatch" />
+				<ref bean="incomeDisBatch" />
+				<ref bean="incomeDisEmailBatch" />
+				<ref bean="netValueNoticeBatch" />
+				<ref bean="netValueWeekBatch" />
+				<ref bean="netValueMonthBatch" />
+				<ref bean="productFoundEmailBatch" />
+			</list>
+		</property>
+	</bean>
+	<bean id="BirthToCustSmsBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!--shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务-->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="SmsBatch" />
+		<property name="targetMethod" value="runBirthToCustSmsBatch" />
+	</bean>
+	<bean id="incomeDisBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务 -->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="IncomeDisBatch" />
+		<property name="targetMethod" value="runIncomeDisBatch" />
+	</bean>
+	<bean id="incomeDisEmailBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务 -->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="IncomeDisEmailBatch" />
+		<property name="targetMethod" value="runIncomeDisEmailBatch" />
+	</bean>
+	<bean id="netValueNoticeBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务 -->
+		<property name="shouldRecover" value="false" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="NetValueNoticeBatch" />
+		<property name="targetMethod" value="runNetValueNoticeBatch" />
+	</bean>
+	
+	<bean id="netValueMonthBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务 -->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="NetValueMonthBatch" />
+		<property name="targetMethod" value="runNetValueMonthBatch" />
+	</bean>
+	
+	<bean id="BirthToAgentSmsBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!--shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务-->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="SmsBatch" />
+		<property name="targetMethod" value="runBirthToAgentSmsBatch" />
+	</bean>
+	<bean id="netValueWeekBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!--shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务-->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="NetValueWeekBatch" />
+		<property name="targetMethod" value="runNetValueWeekBatch" />
+	</bean>
+	<bean id="productFoundEmailBatch"
+		class="com.sinosoft.core.spring.quartz.MethodInvokingJobDetailFactoryBean">
+		<!--shouldRecover属性为true，则当Quartz服务被中止后，再次启动任务时会尝试恢复执行之前未完成的所有任务-->
+		<property name="shouldRecover" value="true" />
+		<property name="durable" value="true" />
+		<property name="targetObject" ref="ProductFoundEmailBatch" />
+		<property name="targetMethod" value="runProductFoundEmailBatch" />
+	</bean>
+</beans>

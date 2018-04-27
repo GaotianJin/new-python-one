@@ -1,0 +1,1427 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.SmsServiceMapper" >
+	<select id="getFoundProductList" resultType="java.util.Map" parameterType="java.util.Map">
+		<!-- SELECT A.PRODUCT_ID "productId",A.PRODUCT_NAME "productName",A.PRODUCT_TYPE "productType",
+		       A.PRODUCT_SUB_TYPE "productSubType",TO_CHAR(B.FOUND_DATE,'YYYY-MM-DD') "foundDate",
+		       TO_CHAR(C.OPEN_DATE,'YYYY-MM-DD') "openDate"
+		FROM T_PD_PRODUCT A,T_PD_WEALTH B,T_PD_WEALTH_OPEN_DATE C 
+		WHERE A.PRODUCT_ID = B.PRODUCT_ID(+)
+			AND B.PD_WEALTH_ID = C.PD_WEALTH_ID(+)
+			AND A.PRODUCT_TYPE = '1'
+			AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH D WHERE D.SMS_TYPE = '01' 
+			    AND D.SMS_TYPE_RELATION_NO = A.PRODUCT_ID AND D.SMS_TYPE_RELATION_DATE = B.FOUND_DATE AND D.RC_STATE = 'E')
+			AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH D WHERE D.SMS_TYPE = '01' 
+			    AND D.SMS_TYPE_RELATION_NO = A.PRODUCT_ID AND D.SMS_TYPE_RELATION_DATE = C.OPEN_DATE AND D.RC_STATE = 'E')
+			AND B.FOUND_DATE <![CDATA[<=]]> TO_DATE('${currentDate}','YYYY-MM-DD')
+			AND NVL(C.OPEN_DATE,DATE'1900-01-01') <![CDATA[<=]]> TO_DATE('${currentDate}','YYYY-MM-DD')
+			AND B.FOUND_DATE <![CDATA[>=]]> TO_DATE('2015-06-10','YYYY-MM-DD')
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE(+) = 'E'
+			AND C.RC_STATE(+) = 'E'
+			ORDER BY A.PRODUCT_ID,B.FOUND_DATE,C.OPEN_DATE -->
+			
+		
+ <!-- FF -->
+		 	
+		SELECT A.PRODUCT_ID "productId",A.PRODUCT_NAME "productName",A.PRODUCT_TYPE "productType",
+	           A.PRODUCT_SUB_TYPE "productSubType",DATE_FORMAT(B.FOUND_DATE,'%Y-%m-%d') "foundDate",
+	           DATE_FORMAT(C.OPEN_DATE,'%Y-%m-%d') "openDate"
+	    FROM T_PD_PRODUCT A LEFT JOIN T_PD_WEALTH B ON A.PRODUCT_ID = B.PRODUCT_ID LEFT JOIN T_PD_WEALTH_OPEN_DATE C 
+	      ON B.PD_WEALTH_ID = C.PD_WEALTH_ID
+	      AND A.PRODUCT_TYPE = '1'
+	      AND ((SELECT COUNT(1) FROM T_TRADE_INFO E,T_TRADE_PRODUCT_INFO F 
+	                      WHERE E.TRADE_INFO_ID = F.TRADE_INFO_ID AND F.PRODUCT_ID = A.PRODUCT_ID
+	                            AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH G,T_SYS_SMS_INFO H WHERE G.SYS_SMS_BATCH_ID = H.SYS_SMS_BATCH_ID
+	                                                  AND H.BUSINESS_NO = E.TRADE_INFO_ID AND H.BUSINESS_TYPE = '01'
+	                                                  AND G.SMS_TYPE_RELATION_NO = F.PRODUCT_ID
+	                                                  AND G.SMS_TYPE_RELATION_DATE = B.FOUND_DATE
+	                                                  AND G.SMS_TYPE = '01' AND G.RC_STATE = 'E'
+	                                                  AND H.RC_STATE = 'E')
+	                            AND A.PRODUCT_SUB_TYPE = '02'
+	                            AND B.FOUND_DATE <![CDATA[>=]]> STR_TO_DATE('2015-06-10','%Y-%m-%d')
+	                            AND E.RC_STATE = 'E' AND F.RC_STATE = 'E'
+	                            AND E.TRADE_STAUS IN('04','10'))>0
+	        OR
+	        (SELECT COUNT(1) FROM T_TRADE_INFO E,T_TRADE_PRODUCT_INFO F 
+	                      WHERE E.TRADE_INFO_ID = F.TRADE_INFO_ID AND F.PRODUCT_ID = A.PRODUCT_ID
+	                            AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH G,T_SYS_SMS_INFO H WHERE G.SYS_SMS_BATCH_ID = H.SYS_SMS_BATCH_ID
+	                                                  AND H.BUSINESS_NO = E.TRADE_INFO_ID AND H.BUSINESS_TYPE = '01'
+	                                                  AND G.SMS_TYPE_RELATION_NO = F.PRODUCT_ID
+	                                                  AND G.SMS_TYPE_RELATION_DATE = C.OPEN_DATE
+	                                                  AND G.SMS_TYPE = '01' AND G.RC_STATE = 'E'
+	                                                  AND H.RC_STATE = 'E')
+	                            AND F.PARAM_CODE = 'expectOpenDay' AND F.PARAM_VALUE <![CDATA[<=]]> #{currentDate}
+	                            AND F.PARAM_VALUE = DATE_FORMAT(C.OPEN_DATE,'%Y-%m-%d')
+                              	AND C.OPEN_DATE  <![CDATA[>=]]> STR_TO_DATE('2015-06-10','%Y-%m-%d')
+	                            AND A.PRODUCT_SUB_TYPE != '02'
+	                            AND E.RC_STATE = 'E' AND F.RC_STATE = 'E'
+	                            AND E.TRADE_STAUS IN('04','10'))>0)
+	      AND B.FOUND_DATE <![CDATA[<=]]> STR_TO_DATE('${currentDate}','%Y-%m-%d')
+	      AND IFNULL(C.OPEN_DATE,DATE'1900-01-01') <![CDATA[<=]]> STR_TO_DATE('${currentDate}','%Y-%m-%d')
+	      AND (B.FOUND_DATE <![CDATA[>=]]> STR_TO_DATE('2015-06-10','%Y-%m-%d') 
+	      		OR C.OPEN_DATE  <![CDATA[>=]]> STR_TO_DATE('2015-06-10','%Y-%m-%d'))
+	      AND A.RC_STATE = 'E'
+	      AND B.RC_STATE = 'E'
+	      AND C.RC_STATE= 'E'
+ 	</select>
+    
+    <select id="getAllTradeInfoByProductIdAndFoundDate" resultType="java.util.Map" parameterType="java.util.Map">
+    	<!-- SELECT DISTINCT A.TRADE_INFO_ID "tradeInfoId",A.TRADE_NO "tradeNo",C.CUST_BASE_INFO_ID "custBaseInfoId",C.CHN_NAME "custName",
+           D.MOBILE "custMobile",A.AGENT_ID "agentId",E.AGENT_NAME "agentName",
+           DECODE(C.SEX,'M','先生','F','女士',null)"appellation",
+           E.MOBILE "agentMobile",F.subscriptionFee "subscriptionAmount"
+	    FROM T_TRADE_INFO A,T_TRADE_CUST_INFO B,T_CUST_BASE_INFO C,T_CUST_CONTACT_INFO D,T_AGENT E,T_TRADE_PRODUCT_INFO_VIEW F
+	    WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	        AND B.CUST_BASE_INFO_ID = C.CUST_BASE_INFO_ID
+	        AND C.CUST_BASE_INFO_ID = D.CUST_BASE_INFO_ID
+	        AND A.AGENT_ID = E.AGENT_ID
+	        AND A.AGENT_ID = C.AGENT_ID
+	        AND C.AGENT_ID = D.AGENT_ID
+	        AND A.TRADE_INFO_ID = F.TRADE_INFO_ID
+	        AND A.TRADE_STAUS IN('04','10')
+	        AND F.PRODUCT_ID = #{productId}
+	        <if test="productSubType != null and productSubType !='' and productSubType!='02'" >
+	      		AND F.expectOpenDay = #{foundDate}
+	    	</if>
+	        AND A.TRADE_TYPE = '1'
+	        AND A.RC_STATE = 'E'
+	        AND B.RC_STATE = 'E'
+	        AND E.RC_STATE = 'E' -->
+	  
+	   <!--s-->
+	         
+	   SELECT DISTINCT A.TRADE_INFO_ID "tradeInfoId",A.TRADE_NO "tradeNo",C.CUST_BASE_INFO_ID "custBaseInfoId",C.CHN_NAME "custName",
+	           D.MOBILE "custMobile",A.AGENT_ID "agentId",E.AGENT_NAME "agentName",
+	           CASE C.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+	           E.MOBILE "agentMobile",F.subscriptionFee "subscriptionAmount"
+	      FROM T_TRADE_INFO A,T_TRADE_CUST_INFO B,T_CUST_BASE_INFO C,T_CUST_CONTACT_INFO D,T_AGENT E,T_TRADE_PRODUCT_INFO_VIEW F
+	      WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	          AND B.CUST_BASE_INFO_ID = C.CUST_BASE_INFO_ID
+	          AND C.CUST_BASE_INFO_ID = D.CUST_BASE_INFO_ID
+	          AND A.AGENT_ID = E.AGENT_ID
+	          <!-- AND A.AGENT_ID = C.AGENT_ID -->
+	          AND E.AGENT_ID = D.AGENT_ID
+	          AND A.TRADE_INFO_ID = F.TRADE_INFO_ID
+	          AND A.TRADE_STAUS IN('04','10')
+	          AND F.PRODUCT_ID = #{productId}
+	          AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH G,T_SYS_SMS_INFO H WHERE G.SYS_SMS_BATCH_ID = H.SYS_SMS_BATCH_ID
+	                                AND G.SMS_TYPE = '01' AND G.SMS_TYPE_RELATION_NO = F.PRODUCT_ID
+	                                AND H.BUSINESS_NO = A.TRADE_INFO_ID AND H.BUSINESS_TYPE = '01'
+	                                AND G.RC_STATE = 'E' AND H.RC_STATE = 'E')
+	          <if test="productSubType != null and productSubType !='' and productSubType!='02'" >
+	            	AND F.expectOpenDay = #{foundDate}
+	          </if>
+	          AND A.TRADE_TYPE = '1'
+	          AND A.RC_STATE = 'E'
+	          AND B.RC_STATE = 'E'
+	          AND E.RC_STATE = 'E'
+	          AND D.RC_STATE = 'E'
+    </select>
+    
+    <select id="getProductNetValueList" resultType="java.util.Map" parameterType="java.util.Map">
+    
+     <!--s-->
+     
+    	SELECT A.PRODUCT_ID "productId",A.PRODUCT_NAME "productName",A.PRODUCT_TYPE "productType",
+           A.PRODUCT_SUB_TYPE "productSubType",DATE_FORMAT(B.FOUND_DATE,'%Y-%m-%d') "foundDate",
+           DATE_FORMAT(C.PUBLIC_DATE,'%Y-%m-%d') "publicDate",C.NET_VALUE "netValue"
+	    FROM T_PD_PRODUCT A,T_PD_WEALTH B,T_PD_WEALTH_NET_VALUE C 
+	    WHERE A.PRODUCT_ID = B.PRODUCT_ID
+		    AND B.PD_WEALTH_ID = C.PD_WEALTH_ID
+		    AND A.PRODUCT_TYPE = '1'
+		    AND A.PRODUCT_SUB_TYPE != '02'
+		    AND C.NET_TYPE = '02'
+		    AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH D WHERE D.SMS_TYPE = '02' 
+		        AND D.SMS_TYPE_RELATION_NO = A.PRODUCT_ID AND D.SMS_TYPE_RELATION_DATE = C.PUBLIC_DATE AND D.RC_STATE = 'E')
+		    AND C.PUBLIC_DATE <![CDATA[<=]]> STR_TO_DATE('${currentDate}','%Y-%m-%d')
+		    AND C.PUBLIC_DATE <![CDATA[>=]]> STR_TO_DATE('2015-06-10','%Y-%m-%d')
+		    AND A.RC_STATE = 'E'
+		    AND B.RC_STATE = 'E'
+		    AND C.RC_STATE = 'E'
+		    ORDER BY A.PRODUCT_ID,C.PUBLIC_DATE
+    </select>
+    
+    <select id="getAllTradeInfoByProductId" resultType="java.util.Map" parameterType="java.util.Map">
+    	<!-- SELECT DISTINCT C.CUST_BASE_INFO_ID "custBaseInfoId",C.CHN_NAME "custName",
+		       D.MOBILE "custMobile",A.AGENT_ID "agentId",E.AGENT_NAME "agentName",E.MOBILE "agentMobile",
+		       DECODE(C.SEX,'M','先生','F','女士',null)"appellation"
+		FROM T_TRADE_INFO A,T_TRADE_CUST_INFO B,T_CUST_BASE_INFO C,T_CUST_CONTACT_INFO D,T_AGENT E
+		WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	      AND B.CUST_BASE_INFO_ID = C.CUST_BASE_INFO_ID
+	      AND C.CUST_BASE_INFO_ID = D.CUST_BASE_INFO_ID
+	      AND A.AGENT_ID = E.AGENT_ID
+	      AND A.AGENT_ID = C.AGENT_ID
+	      AND E.AGENT_ID = D.AGENT_ID
+	      AND EXISTS(SELECT 'X' FROM T_TRADE_PRODUCT_INFO F WHERE F.PRODUCT_ID = #{productId} AND F.PARAM_CODE = 'expectOpenDay' AND F.PARAM_VALUE <![CDATA[<]]>#{publicDate} AND F.TRADE_INFO_ID = A.TRADE_INFO_ID AND F.RC_STATE = 'E')
+	      AND A.TRADE_STAUS IN('04','10')
+     	  AND A.TRADE_TYPE = '1'
+	      AND A.RC_STATE = 'E'
+	      AND B.RC_STATE = 'E'
+	      AND E.RC_STATE = 'E' -->
+	      
+	       <!--s-->
+	       
+	  SELECT DISTINCT C.CUST_BASE_INFO_ID "custBaseInfoId",C.CHN_NAME "custName",
+	           D.MOBILE "custMobile",E.AGENT_ID "agentId",E.AGENT_NAME "agentName",E.MOBILE "agentMobile",
+	            CASE C.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+	    FROM T_TRADE_INFO A,T_TRADE_CUST_INFO B,T_CUST_BASE_INFO C,T_CUST_CONTACT_INFO D,T_AGENT E
+	    WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	        AND B.CUST_BASE_INFO_ID = C.CUST_BASE_INFO_ID
+	        AND C.CUST_BASE_INFO_ID = D.CUST_BASE_INFO_ID
+	        AND C.AGENT_ID = D.AGENT_ID
+	       AND C.AGENT_ID = E.AGENT_ID
+	        AND EXISTS(SELECT 'X' FROM T_TRADE_PRODUCT_INFO F WHERE F.PRODUCT_ID = #{productId}
+	        AND F.PARAM_CODE = 'expectOpenDay' AND F.PARAM_VALUE<![CDATA[<]]>#{publicDate}
+	        AND F.TRADE_INFO_ID = A.TRADE_INFO_ID AND F.RC_STATE = 'E')
+	        AND A.TRADE_STAUS IN('04','10')
+	        AND A.TRADE_TYPE = '1'
+	        AND A.RC_STATE = 'E'
+	        AND D.RC_STATE = 'E'
+	        AND C.RC_STATE = 'E'
+	        AND B.RC_STATE = 'E'
+	        AND E.RC_STATE = 'E'
+    </select>
+    
+    <!-- 获取当日生日的客户list-SLY -->
+    <select id="getAllCustInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    	SELECT A.CUST_BASE_INFO_ID "custBaseInfoId",A.CUSTOMER_NO "customerNo",A.CHN_NAME "custName",A.AGENT_ID "agentId",A.BIRTHDAY "birthday",
+    		  CASE A.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+		      CONCAT(DATE_FORMAT(STR_TO_DATE('${calDate}','%Y-%m-%d'),'%Y'),DATE_FORMAT(A.BIRTHDAY,'-%m-%d'))"currentYearBirthday",
+		       (SELECT B.MOBILE FROM T_CUST_CONTACT_INFO B WHERE B.CUST_CONTACT_INFO_ID 
+		               =(SELECT MAX(C.CUST_CONTACT_INFO_ID) FROM T_CUST_CONTACT_INFO C 
+		               WHERE C.CUST_BASE_INFO_ID = A.CUST_BASE_INFO_ID AND C.RC_STATE = 'E')) "custMobile"
+		FROM T_CUST_BASE_INFO A 
+		WHERE A.RC_STATE = 'E'
+	  AND CONCAT(DATE_FORMAT(STR_TO_DATE('${calDate}','%Y-%m-%d'),'%Y'),DATE_FORMAT(A.BIRTHDAY,'-%m-%d'))=#{calDate}
+		   AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH D WHERE D.SMS_TYPE = '06' 
+		        AND D.SMS_TYPE_RELATION_DATE = STR_TO_DATE(CONCAT(DATE_FORMAT(DATE_FORMAT('${calDate}','%Y-%m-%d'),'%Y'),DATE_FORMAT(A.BIRTHDAY,'-%m-%d')),'%Y-%m-%d')
+		        AND D.SMS_TYPE_RELATION_NO = #{sendObjType}
+		        AND D.RC_STATE = 'E')
+		  AND A.CUST_LEVEL = '01'
+		  AND (SELECT x.CUST_TYPE FROM t_cust_oth_info x WHERE x.CUST_BASE_INFO_ID = A.CUST_BASE_INFO_ID AND x.RC_STATE = 'E') <![CDATA[<>]]> '05'
+		  ORDER BY A.CUST_BASE_INFO_ID
+    </select>
+    
+    <select id="getAllProductDisInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    
+     <!--s-->
+     
+    	SELECT A.PD_PRODUCT_ID "productId",A.PD_INCOME_DISTRIBUTE_ID "pdIncomeDisId",
+           DATE_FORMAT(A.DISTRIBUTE_DATE,'%Y-%m-%d') "distributeDate",
+           DATE_FORMAT(A.DISTRIBUTE_START_DATE,'%Y-%m-%d') "distributeStartDate",
+           DATE_FORMAT(A.DISTRIBUTE_END_DATE,'%Y-%m-%d') "distributeEndDate",
+           B.PRODUCT_NAME "productName",IFNULL(D.TRANSFER_WORK_DAYS,'10') "transferWorkDays"
+    FROM T_PD_INCOME_DIS A,T_PD_PRODUCT B,T_PD_WEALTH D
+    WHERE A.DISTRIBUTE_STATUS = '02'
+          AND A.PD_PRODUCT_ID = B.PRODUCT_ID
+          AND B.PRODUCT_ID = D.PRODUCT_ID
+          AND NOT EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH C WHERE C.SMS_TYPE_RELATION_NO = A.PD_PRODUCT_ID 
+              AND C.SMS_TYPE_RELATION_DATE = A.DISTRIBUTE_DATE AND C.SMS_TYPE = '03' AND C.RC_STATE = 'E')
+          AND A.DISTRIBUTE_DATE <![CDATA[<=]]> STR_TO_DATE('${currentDate}','%Y-%m-%d')
+          AND A.RC_STATE = 'E'
+		  AND B.RC_STATE = 'E'
+          AND D.RC_STATE = 'E'
+    </select>
+    
+    <select id="getProductDisDetailInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    
+     <!--s-->
+     
+    	 SELECT DISTINCT B.CUST_BASE_INFO_ID "custBaseInfoId", B.CHN_NAME "custName",
+    	  CASE B.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+	       round((IFNULL(A.AGENCY_DISTRIBUTE_PRINCIPAL,0)+IFNULL(A.AGENCY_DISTRIBUTE_INTEREST,0)),2) "distributeAmount",F.MOBILE "custMobile",
+	       G.AGENT_ID "agentId",G.AGENT_NAME "agentName",G.MOBILE "agentMobile",A.TRADE_INFO_ID "tradeInfoId"
+	    FROM T_PD_INCOME_DIS_DETAIL A,T_CUST_BASE_INFO B,T_TRADE_INFO C,T_TRADE_CUST_INFO D,
+	         T_TRADE_CUST_CONTACT_RELA E,T_CUST_CONTACT_INFO F,T_AGENT G
+	    WHERE A.TRADE_INFO_ID = C.TRADE_INFO_ID
+	          AND A.CUST_BASE_INFO_ID = B.CUST_BASE_INFO_ID
+	          AND C.TRADE_INFO_ID = D.TRADE_INFO_ID
+	          AND D.TRADE_CUST_INFO_ID = E.TRADE_CUST_INFO_ID
+	          AND E.CUST_CONTACT_INFO_ID = F.CUST_CONTACT_INFO_ID
+	          AND B.AGENT_ID = G.AGENT_ID
+	          AND A.PD_INCOME_DISTRIBUTE_ID = #{pdIncomeDisId}
+	          AND A.RC_STATE = 'E'
+	          AND B.RC_STATE = 'E'
+	          AND C.RC_STATE = 'E'
+	          AND D.RC_STATE = 'E'
+	          AND E.RC_STATE = 'E'
+	          AND G.RC_STATE = 'E'
+    </select>
+    
+    
+    
+    
+    <sql id="getSmsBatchInfoCondition">
+  		<if test="productId != null and productId !=''" >
+      		AND B.PRODUCT_ID = #{productId}
+    	</if>
+    	<if test="smsType != null and smsType !=''" >
+      		AND A.SMS_TYPE = #{smsType}
+    	</if>
+    	<if test="smsStatus != null and smsStatus !=''" >
+      		AND A.SMS_STATUS = #{smsStatus}
+    	</if>
+    	<if test="smsCreateDateStart != null and smsCreateDateStart !=''" >
+      		AND A.SMS_CREATE_TIME  <![CDATA[>=]]> STR_TO_DATE('${smsCreateDateStart}','%Y-%m-%d')
+    	</if>
+    	<if test="smsCreateDateEnd != null and smsCreateDateEnd !=''" >
+      		AND A.SMS_CREATE_TIME  <![CDATA[<=]]> STR_TO_DATE('${smsCreateDateEnd}','%Y-%m-%d')
+    	</if>
+  	</sql>
+  	<!-- 客户短信审核筛选条件 -->
+  	 <sql id="getCustSmsBatchInfoCondition">
+  		<if test="custName != null and custName !=''" >
+      		AND B.CHN_NAME LIKE '%${custName}%'
+    	</if>
+    	<if test="smsType != null and smsType !=''" >
+      		AND A.SMS_TYPE = #{smsType}
+    	</if>
+    	<if test="smsStatus != null and smsStatus !=''" >
+      		AND A.SMS_STATUS = #{smsStatus}
+    	</if>
+    	<if test="smsCreateDateStart != null and smsCreateDateStart !=''" >
+      		AND A.SMS_CREATE_TIME  <![CDATA[>=]]> STR_TO_DATE('${smsCreateDateStart}','%Y-%m-%d')
+    	</if>
+    	<if test="smsCreateDateEnd != null and smsCreateDateEnd !=''" >
+      		AND A.SMS_CREATE_TIME  <![CDATA[<=]]> STR_TO_DATE('${smsCreateDateEnd}','%Y-%m-%d')
+    	</if>
+  	</sql>
+    
+    <select id="getProductFoundSmsBatchInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    
+     <!--s-->
+     
+    select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+	    SELECT (SELECT @rownum := 0),
+	       A.SYS_SMS_BATCH_ID "sysSmsBatchId",B.PRODUCT_ID "productId",B.PRODUCT_NAME "productName",
+	    	DATE_FORMAT(A.SMS_TYPE_RELATION_DATE,'%Y-%m-%d') "expectOpenDay",
+	       A.SMS_TYPE "smsType",FUNC_GET_CODE_NAME('smsType',A.SMS_TYPE) "smsTypeName",
+	       A.SMS_STATUS "smsStatus",FUNC_GET_CODE_NAME('smsDealStatus',A.SMS_STATUS) "smsStatusName",
+	       (SELECT COUNT(1) FROM T_SYS_SMS_INFO C WHERE C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID AND C.RC_STATE = 'E') "shoudSendCount",
+	       (SELECT COUNT(1) FROM T_SYS_SMS_INFO C WHERE C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID AND C.SEND_STATUS = '02' AND C.RC_STATE = 'E') "actuSendCount",
+	       '客户明细' "custDetail"
+		FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B
+		WHERE 1 = 1
+		AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+		<include refid="getSmsBatchInfoCondition"/>
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+		) nAlias
+	) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+    </select>
+    
+    <select id="getProductFoundSmsBatchInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B
+		WHERE 1 = 1
+		AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+		<include refid="getSmsBatchInfoCondition"/>
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+    </select> 
+    
+    <select id="getNetValuePublicSmsBatchInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    
+     <!--s--> 
+   select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+    	SELECT (SELECT @rownum := 0),
+    	   A.SYS_SMS_BATCH_ID "sysSmsBatchId",B.PRODUCT_ID "productId",B.PRODUCT_NAME "productName",D.NET_VALUE "netValue",
+    		DATE_FORMAT(A.SMS_TYPE_RELATION_DATE,'%Y-%m-%d') "publicDate",
+	       A.SMS_TYPE "smsType",FUNC_GET_CODE_NAME('smsType',A.SMS_TYPE) "smsTypeName",
+	       A.SMS_STATUS "smsStatus",FUNC_GET_CODE_NAME('smsDealStatus',A.SMS_STATUS) "smsStatusName",
+	       (SELECT COUNT(1) FROM T_SYS_SMS_INFO E WHERE E.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID AND E.RC_STATE = 'E') "shoudSendCount",
+	       (SELECT COUNT(1) FROM T_SYS_SMS_INFO E WHERE E.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID AND E.SEND_STATUS = '02' AND E.RC_STATE = 'E') "actuSendCount",
+	       '客户明细' "custDetail"
+		FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B,T_PD_WEALTH C,T_PD_WEALTH_NET_VALUE D
+		WHERE 1 = 1
+		AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+		AND B.PRODUCT_ID = C.PRODUCT_ID
+		AND C.PD_WEALTH_ID = D.PD_WEALTH_ID
+		AND A.SMS_TYPE_RELATION_DATE = D.PUBLIC_DATE
+		AND D.NET_TYPE = '02'
+		<include refid="getSmsBatchInfoCondition"/>
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+		AND C.RC_STATE = 'E'
+		AND D.RC_STATE = 'E'
+		ORDER BY A.SMS_TYPE_RELATION_DATE DESC
+		) nAlias
+	) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+    </select>
+    
+    <select id="getNetValuePublicSmsBatchInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B,T_PD_WEALTH C,T_PD_WEALTH_NET_VALUE D
+		WHERE 1 = 1
+		AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+		AND B.PRODUCT_ID = C.PRODUCT_ID
+		AND C.PD_WEALTH_ID = D.PD_WEALTH_ID
+		AND A.SMS_TYPE_RELATION_DATE = D.PUBLIC_DATE
+		AND D.NET_TYPE = '02'
+		<include refid="getSmsBatchInfoCondition"/>
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+		AND C.RC_STATE = 'E'
+		AND D.RC_STATE = 'E'
+    </select> 
+    
+    
+    <select id="getIncomeDisSmsBatchInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    
+     <!--s-->
+     select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+	    	SELECT (SELECT @rownum := 0),
+	    	   A.SYS_SMS_BATCH_ID "sysSmsBatchId",B.PRODUCT_ID "productId",B.PRODUCT_NAME "productName",
+		    	DATE_FORMAT(A.SMS_TYPE_RELATION_DATE,'%Y-%m-%d') "incomeDistributeDate",
+		       A.SMS_TYPE "smsType",FUNC_GET_CODE_NAME('smsType',A.SMS_TYPE) "smsTypeName",
+		       A.SMS_STATUS "smsStatus",FUNC_GET_CODE_NAME('smsDealStatus',A.SMS_STATUS) "smsStatusName",
+		       (SELECT COUNT(1) FROM T_SYS_SMS_INFO C WHERE C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID AND C.RC_STATE = 'E') "shoudSendCount",
+		       (SELECT COUNT(1) FROM T_SYS_SMS_INFO C WHERE C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID AND C.SEND_STATUS = '02' AND C.RC_STATE = 'E') "actuSendCount",
+		       '客户明细' "custDetail"
+			FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B
+			WHERE 1 = 1
+			AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+			<include refid="getSmsBatchInfoCondition"/>
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE = 'E'
+		) nAlias
+	) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+    </select>
+    
+    <select id="getIncomeDisSmsBatchInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B
+		WHERE 1 = 1
+			AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+			<include refid="getSmsBatchInfoCondition"/>
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE = 'E'
+    </select> 
+    
+    
+    
+    <sql id="getSmsDetailInfoCondition">
+  		<if test="custName!= null and custName !=''" >
+      		AND B.SEND_OBJ_NAME like '%${custName}%'
+    	</if>
+    	<if test="sendStatus != null and sendStatus !=''" >
+      		AND B.SEND_STATUS = #{sendStatus}
+    	</if>
+    	<if test="sendObjType != null and sendObjType !=''" >
+      		AND B.SEND_OBJ_TYPE = #{sendObjType}
+    	</if>
+  	</sql>
+    
+    <select id="getProductFoundSmsDetailInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+     <!--s-->
+    	 select tAlias.* from(
+	         	select nAlias.*,@rownum:=@rownum+1 r_rownum from
+	         	(
+		    	SELECT (SELECT @rownum := 0),
+		    	   B.SYS_SMS_INFO_ID "sysSmsInfoId",B.SYS_SMS_BATCH_ID "sysSmsBatchId",C.TRADE_INFO_ID "tradeInfoId",
+		    	   C.TRADE_NO "tradeNo",B.SEND_OBJ "custId",B.SEND_OBJ_NAME "sendObjName",B.SEND_OBJ_TYPE "sendObjType",
+		    	   FUNC_GET_CODE_NAME('smsSendObjType',B.SEND_OBJ_TYPE)"sendObjTypeName",
+		    	   (SELECT SUM(E.PARAM_VALUE)FROM T_TRADE_PRODUCT_INFO E WHERE E.TRADE_INFO_ID = C.TRADE_INFO_ID 
+		               AND E.PARAM_CODE = 'subscriptionFee' AND RC_STATE = 'E')"money",
+			       B.SEND_MOBILE "sendMobile",B.SEND_CONTENT "sendContent",
+			       B.SEND_STATUS "sendStatus",FUNC_GET_CODE_NAME('smsSendStatus',B.SEND_STATUS) "sendStatusName",
+			       B.SEND_TIME "sendTime",D.AGENT_ID "agentId",D.AGENT_NAME "agentName",D.MOBILE "agentMobile"
+				FROM T_SYS_SMS_BATCH A,T_SYS_SMS_INFO B,T_TRADE_INFO C,T_AGENT D
+				WHERE A.SYS_SMS_BATCH_ID = B.SYS_SMS_BATCH_ID
+				AND B.BUSINESS_NO = C.TRADE_INFO_ID
+				AND B.BUSINESS_TYPE = '01'
+				AND C.AGENT_ID = D.AGENT_ID
+				AND A.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+				AND EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH F WHERE F.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID 
+						AND F.SMS_TYPE = #{smsType} AND F.RC_STATE = 'E')
+				<include refid="getSmsDetailInfoCondition"/>
+				AND A.RC_STATE = 'E'
+				AND B.RC_STATE = 'E'
+				AND C.RC_STATE = 'E'
+				AND D.RC_STATE = 'E'
+				
+		    ) nAlias
+		) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+			<if test="sort == null or sort ==''" >
+	      		ORDER BY "tradeNo","sendObjType"
+	    	</if>
+			<if test="sort != null and sort !=''" >
+	      		ORDER BY "${sort}" ${order} 
+	    	</if>
+    </select>
+    
+    <select id="getProductFoundSmsDetailInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		    	SELECT COUNT(1)
+				FROM T_SYS_SMS_BATCH A,T_SYS_SMS_INFO B,T_TRADE_INFO C,T_AGENT D
+				WHERE A.SYS_SMS_BATCH_ID = B.SYS_SMS_BATCH_ID
+				AND B.BUSINESS_NO = C.TRADE_INFO_ID
+				AND B.BUSINESS_TYPE = '01'
+				AND C.AGENT_ID = D.AGENT_ID
+				AND A.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+				AND EXISTS(SELECT 'X' FROM T_SYS_SMS_BATCH F WHERE F.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID 
+						AND F.SMS_TYPE = #{smsType} AND F.RC_STATE = 'E')
+				<include refid="getSmsDetailInfoCondition"/>
+				AND A.RC_STATE = 'E'
+				AND B.RC_STATE = 'E'
+				AND C.RC_STATE = 'E'
+				AND D.RC_STATE = 'E'
+    </select>
+    
+    <select id="getSmsAuditDetailInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		    	  SELECT
+	b.SYS_SMS_INFO_ID 'sysSmsInfoId',
+	b.SYS_SMS_BATCH_ID 'sysSmsBatchId',
+	b.BUSINESS_NO 'tradeInfoId',
+	CASE WHEN
+(SELECT
+x.SMS_TYPE
+FROM
+t_sys_sms_batch x
+WHERE
+x.SYS_SMS_BATCH_ID = b.SYS_SMS_BATCH_ID
+AND x.RC_STATE= 'E' ) IN ("01","02","03","04","15","16","17","18")
+THEN
+(
+SELECT
+c.TRADE_NO
+FROM
+t_trade_info c
+WHERE
+b.BUSINESS_NO = c.TRADE_INFO_ID
+AND c.RC_STATE = 'E'
+)
+ELSE
+(
+SELECT
+y.CUSTOMER_NO
+FROM
+t_cust_base_info y
+WHERE
+b.BUSINESS_NO = y.CUST_BASE_INFO_ID
+AND y.RC_STATE = 'E'
+)
+END
+ 'tradeNo',
+	b.SEND_OBJ_NAME 'sendObjName',
+	b.SEND_MOBILE 'sendMobile',
+	FUNC_GET_CODE_NAME (
+		'smsSendObjType',
+		b.SEND_OBJ_TYPE
+	) 'sendObjTypeName',
+	(
+SELECT
+	d.AGENT_NAME
+FROM 
+	t_trade_info c,
+	t_agent d,
+	t_cust_base_info e,
+	t_trade_cust_info f
+WHERE
+		b.BUSINESS_NO = c.TRADE_INFO_ID
+AND f.cust_base_info_id = e.cust_base_info_id
+AND c.trade_info_id = f.trade_info_id
+AND e.AGENT_ID = d.AGENT_ID
+AND c.RC_STATE = 'E'
+AND d.RC_STATE = 'E'
+AND e.RC_STATE = 'E'
+AND f.RC_STATE = 'E'
+) 'agentName',
+	(
+SELECT
+	d.MOBILE
+FROM 
+	t_trade_info c,
+	t_agent d,
+	t_cust_base_info e,
+	t_trade_cust_info f
+WHERE
+		b.BUSINESS_NO = c.TRADE_INFO_ID
+AND f.cust_base_info_id = e.cust_base_info_id
+AND c.trade_info_id = f.trade_info_id
+AND e.AGENT_ID = d.AGENT_ID
+AND c.RC_STATE = 'E'
+AND d.RC_STATE = 'E'
+AND e.RC_STATE = 'E'
+AND f.RC_STATE = 'E'
+) 'agentMobile',
+	b.SEND_CONTENT 'sendContent',
+	b.SEND_STATUS 'sendStatus',
+	FUNC_GET_CODE_NAME (
+		'smsSendStatus',
+		b.SEND_STATUS
+	) 'sendStatusName'
+FROM
+	t_sys_sms_info b
+WHERE
+	b.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+AND b.RC_STATE = 'E'
+<include refid="getSmsDetailInfoCondition"/>
+LIMIT #{startIndex},#{endIndex}
+    </select>
+    
+    <select id="getSmsAuditDetailInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+SELECT COUNT(1)
+		    	FROM
+	t_sys_sms_info b
+WHERE
+	b.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+AND b.RC_STATE = 'E'
+<include refid="getSmsDetailInfoCondition"/>
+    </select>
+    
+    <select id="getIncomeDisSmsDetailInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+     <!--s-->
+    	select tAlias.* from(
+	         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+	         	(
+			    SELECT (SELECT @rownum := 0),
+			           B.SYS_SMS_INFO_ID "sysSmsInfoId",B.SYS_SMS_BATCH_ID "sysSmsBatchId",C.TRADE_INFO_ID "tradeInfoId",
+			    	   C.TRADE_NO "tradeNo",B.SEND_OBJ "custId",B.SEND_OBJ_NAME "sendObjName",B.SEND_OBJ_TYPE "sendObjType",
+			    	   FUNC_GET_CODE_NAME('smsSendObjType',B.SEND_OBJ_TYPE)"sendObjTypeName",
+			    	   (SELECT (IFNULL(F.AGENCY_DISTRIBUTE_PRINCIPAL,0)+IFNULL(F.AGENCY_DISTRIBUTE_INTEREST,0))
+			          FROM T_PD_INCOME_DIS E,T_PD_INCOME_DIS_DETAIL F 
+			          WHERE E.PD_PRODUCT_ID = A.SMS_TYPE_RELATION_NO
+			                 AND E.DISTRIBUTE_DATE = A.SMS_TYPE_RELATION_DATE
+			                 AND E.PD_INCOME_DISTRIBUTE_ID = F.PD_INCOME_DISTRIBUTE_ID
+			                 AND F.TRADE_INFO_ID = C.TRADE_INFO_ID
+			                 AND E.RC_STATE = 'E' AND F.RC_STATE = 'E')"money",
+				       B.SEND_MOBILE "sendMobile",B.SEND_CONTENT "sendContent",
+				       B.SEND_STATUS "sendStatus",FUNC_GET_CODE_NAME('smsSendStatus',B.SEND_STATUS) "sendStatusName",
+				       B.SEND_TIME "sendTime",D.AGENT_ID "agentId",D.AGENT_NAME "agentName",D.MOBILE "agentMobile"
+					FROM T_SYS_SMS_BATCH A,T_SYS_SMS_INFO B,T_TRADE_INFO C,T_TRADE_CUST_INFO G,T_CUST_BASE_INFO H,T_AGENT D
+					WHERE A.SYS_SMS_BATCH_ID = B.SYS_SMS_BATCH_ID
+					AND B.BUSINESS_NO = C.TRADE_INFO_ID
+			    AND B.BUSINESS_TYPE = '01'
+			    AND C.TRADE_INFO_ID = G.TRADE_INFO_ID
+          		AND G.CUST_BASE_INFO_ID = H.CUST_BASE_INFO_ID
+          		AND H.AGENT_ID = D.AGENT_ID
+			    AND A.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+			    AND A.SMS_TYPE = '03'
+			    <include refid="getSmsDetailInfoCondition"/>
+			    AND A.RC_STATE = 'E'
+			    AND B.RC_STATE = 'E'
+			    AND C.RC_STATE = 'E'
+			    AND D.RC_STATE = 'E'
+			    AND G.RC_STATE = 'E'
+			    AND H.RC_STATE = 'E'
+			    ) nAlias
+			) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+			    <if test="sort == null or sort ==''" >
+		      		ORDER BY "tradeNo","sendObjType"
+		    	</if>
+				<if test="sort != null and sort !=''" >
+		      		ORDER BY "${sort}" ${order} 
+		    	</if>
+    </select>
+    
+    <select id="getIncomeDisSmsDetailInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+			    SELECT COUNT(1)
+					FROM T_SYS_SMS_BATCH A,T_SYS_SMS_INFO B,T_TRADE_INFO C,T_TRADE_CUST_INFO G,T_CUST_BASE_INFO H,T_AGENT D
+					WHERE A.SYS_SMS_BATCH_ID = B.SYS_SMS_BATCH_ID
+					AND B.BUSINESS_NO = C.TRADE_INFO_ID
+			    AND B.BUSINESS_TYPE = '01'
+			    AND C.TRADE_INFO_ID = G.TRADE_INFO_ID
+          		AND G.CUST_BASE_INFO_ID = H.CUST_BASE_INFO_ID
+          		AND H.AGENT_ID = D.AGENT_ID
+			    AND A.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+			    AND A.SMS_TYPE = '03'
+			    <include refid="getSmsDetailInfoCondition"/>
+			    AND A.RC_STATE = 'E'
+			    AND B.RC_STATE = 'E'
+			    AND C.RC_STATE = 'E'
+			    AND D.RC_STATE = 'E'
+			    AND G.RC_STATE = 'E'
+			    AND H.RC_STATE = 'E'
+    </select>
+     <select id="getSmsAuditInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    SELECT
+	A.SYS_SMS_BATCH_ID "sysSmsBatchId",
+	B.PRODUCT_ID "productId",
+	B.PRODUCT_NAME "productName",
+	A.SMS_TYPE "smsType",
+	FUNC_GET_CODE_NAME ('smsType', A.SMS_TYPE) "smsTypeName",
+	A.SMS_STATUS "smsStatus",
+	FUNC_GET_CODE_NAME (
+		'smsDealStatus',
+		A.SMS_STATUS
+	) "smsStatusName",
+	(
+		SELECT
+			COUNT(1)
+		FROM
+			T_SYS_SMS_INFO C
+		WHERE
+			C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID
+		AND C.RC_STATE = 'E'
+	) "shoudSendCount",
+	(
+		SELECT
+			COUNT(1)
+		FROM
+			T_SYS_SMS_INFO C
+		WHERE
+			C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID
+		AND C.SEND_STATUS = '02'
+		AND C.RC_STATE = 'E'
+	) "actuSendCount",
+	DATE_FORMAT(A.SMS_CREATE_TIME,'%Y-%m-%d %H:%i:%S') "smsCreateTime",
+	'短信明细' AS "custDetail"
+FROM
+	T_SYS_SMS_BATCH A,
+	T_PD_PRODUCT B
+WHERE
+	1 = 1
+AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+AND A.RC_STATE = 'E'
+AND B.RC_STATE = 'E'
+AND A.SMS_TYPE IN ('01','02','03','04','15','16','17','18')
+<include refid="getSmsBatchInfoCondition"/>
+LIMIT #{startIndex},#{endIndex}
+    </select>
+    
+ <!-- 获取客户短信审核数据 -->
+ <select id="getCustSmsAuditInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    SELECT
+	A.SYS_SMS_BATCH_ID "sysSmsBatchId",
+    B.CUST_BASE_INFO_ID "custId",
+	B.CHN_NAME "custName",
+	A.SMS_TYPE "smsCustType",
+	FUNC_GET_CODE_NAME ('smsCustType', A.SMS_TYPE) "smsTypeName",
+	A.SMS_STATUS "smsStatus",
+	FUNC_GET_CODE_NAME (
+		'smsDealStatus',
+		A.SMS_STATUS
+	) "smsStatusName",
+	(
+		SELECT
+			COUNT(1)
+		FROM
+			T_SYS_SMS_INFO C
+		WHERE
+			C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID
+		AND C.RC_STATE = 'E'
+	) "shoudSendCount",
+	(
+		SELECT
+			COUNT(1)
+		FROM
+			T_SYS_SMS_INFO C
+		WHERE
+			C.SYS_SMS_BATCH_ID = A.SYS_SMS_BATCH_ID
+		AND C.SEND_STATUS = '02'
+		AND C.RC_STATE = 'E'
+	) "actuSendCount",
+	DATE_FORMAT(A.SMS_CREATE_TIME,'%Y-%m-%d %H:%i:%S') "smsCreateTime",
+	'短信明细' AS "custDetail"
+FROM
+	T_SYS_SMS_BATCH A,
+	T_CUST_BASE_INFO B
+WHERE
+	1 = 1
+AND A.SMS_TYPE_RELATION_NO = B.CUST_BASE_INFO_ID
+AND A.RC_STATE = 'E'
+AND B.RC_STATE = 'E'
+AND A.SMS_TYPE IN ('08','09','10')
+<include refid="getCustSmsBatchInfoCondition"/>
+LIMIT #{startIndex},#{endIndex}
+    </select>
+ 
+ 
+ 
+    
+    <select id="getSmsAuditInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_SYS_SMS_BATCH A,T_PD_PRODUCT B
+		WHERE 1 = 1
+			AND A.SMS_TYPE_RELATION_NO = B.PRODUCT_ID
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE = 'E'
+			AND A.SMS_TYPE IN ('01','02','03','04','15','16','17','18')
+			<include refid="getSmsBatchInfoCondition"/>
+    </select> 
+    <!-- 获取客户审核短信总条数 -->
+    <select id="getCustSmsAuditInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_SYS_SMS_BATCH A,T_CUST_BASE_INFO B
+		WHERE 1 = 1
+			AND A.SMS_TYPE_RELATION_NO = B.CUST_BASE_INFO_ID
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE = 'E'
+			AND A.SMS_TYPE IN ('08','09','10')
+			<include refid="getCustSmsBatchInfoCondition"/>
+    </select> 
+    
+    <!-- 获取明日生日的客户所属理财经理信息 -->
+    <select id="getAgentInfo" resultType="java.util.Map" parameterType="java.util.Map">
+    	SELECT
+	a.AGENT_ID 'agentId',
+	a.AGENT_NAME 'agentName',
+	CASE A.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END 'agentAppellation',
+	a.MOBILE 'mobile',
+b.CHN_NAME 'custName',
+b.CUST_BASE_INFO_ID 'custBaseInfoId'
+FROM
+	t_agent A,t_cust_base_info B
+WHERE
+	A.RC_STATE = 'E'
+	AND B.RC_STATE = 'E'
+	AND A.AGENT_ID = B.AGENT_ID
+AND NOT EXISTS (
+	SELECT
+		'X'
+	FROM
+		T_SYS_SMS_BATCH D
+	WHERE
+		D.SMS_TYPE = '06'
+	AND D.SMS_TYPE_RELATION_DATE = STR_TO_DATE(
+		CONCAT(
+			DATE_FORMAT(
+				DATE_FORMAT('${calDate}', '%Y-%m-%d'),
+				'%Y'
+			),
+			DATE_FORMAT(B.BIRTHDAY, '-%m-%d')
+		),
+		'%Y-%m-%d'
+	)
+	AND D.SMS_TYPE_RELATION_NO = #{sendObjType}
+	AND D.RC_STATE = 'E'
+)
+AND a.AGENT_ID = #{agentId}
+AND b.CUST_BASE_INFO_ID = #{custBaseInfoId}
+    </select>
+    <!-- 获取到账短信map信息 -->
+    <select id="getPdAmountrderMap" resultType="java.util.Map" parameterType="java.util.Map">
+    SELECT a.PD_AMOUNT_ORDER_INFO_ID 'pdAmountOrderInfoId',
+a.CUST_NAME 'custName',
+IFNULL(a.MOBILE,(SELECT x.MOBILE FROM t_cust_contact_info x
+WHERE a.CUST_BASE_INFO_ID = x.CUST_BASE_INFO_ID AND x.RC_STATE = 'E')) 'custMobile',
+a.PRODUCT_ID 'productId',
+b.PRODUCT_NAME 'productName',
+FORMAT(a.ORDER_AMOUNT,0) 'orderAmount',
+a.AGENT_ID 'agentId',
+c.AGENT_NAME 'agentName',
+CASE c.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+c.MOBILE 'agentMobile'
+FROM t_pd_amount_order_info a,t_pd_product b,t_agent c
+WHERE a.PD_AMOUNT_ORDER_INFO_ID = #{pdAmountOrderInfoId}
+AND a.PRODUCT_ID = b.PRODUCT_ID
+AND a.AGENT_ID = c.AGENT_ID
+AND a.RC_STATE = 'E'
+AND b.RC_STATE = 'E'
+AND c.RC_STATE = 'E'
+    </select>
+
+	<!-- 获取产品成立短信map信息-SLY -->
+	<select id="getTradeInfoMap" resultType="java.util.Map"
+		parameterType="java.util.Map">
+		SELECT a.TRADE_INFO_ID 'tradeInfoId',
+		d.PRODUCT_ID
+		'productId',
+		d.PRODUCT_NAME 'productName',
+		f.CUST_BASE_INFO_ID
+		'custBaseInfoId',
+		f.CHN_NAME 'custName',
+		CASE f.SEX WHEN 'M' THEN '先生'
+		WHEN 'F' THEN '女士' ELSE NULL END
+		"appellation",
+		g.MOBILE 'custMobile',
+		h.AGENT_ID 'agentId',
+		h.AGENT_NAME 'agentName',
+		CASE h.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END 'agentAppellation',
+		h.MOBILE 'agentMobile',
+		(SELECT CASE d.PRODUCT_SUB_TYPE WHEN '01' THEN x.FOUND_DATE WHEN '02'
+		THEN x.FOUND_DATE
+		WHEN '03' THEN c.expectOpenDay ELSE NULL END
+		FROM t_pd_wealth x
+		WHERE x.PRODUCT_ID = d.PRODUCT_ID
+		AND x.RC_STATE = 'E') 'found_Date',
+		DATE_FORMAT((SELECT CASE d.PRODUCT_SUB_TYPE WHEN '01' THEN x.FOUND_DATE WHEN '02' THEN
+		x.FOUND_DATE
+		WHEN '03' THEN c.expectOpenDay ELSE NULL END
+		FROM t_pd_wealth x
+		WHERE x.PRODUCT_ID = d.PRODUCT_ID
+		AND x.RC_STATE = 'E'),'%Y年%m月%d日') 'foundDate'
+		FROM t_trade_status_info
+		a,t_trade_info b,t_trade_product_info_view
+		c,t_pd_product d,
+		t_trade_cust_info e,t_cust_base_info f,t_cust_contact_info g,t_agent h
+		WHERE a.TRADE_STATUS_INFO_ID = #{tradeStatusInfoId}
+		AND a.TRADE_INFO_ID
+		= b.TRADE_INFO_ID
+		AND c.TRADE_INFO_ID = b.TRADE_INFO_ID
+		AND c.PRODUCT_ID
+		= d.PRODUCT_ID
+		AND e.TRADE_INFO_ID = b.TRADE_INFO_ID
+		AND
+		e.CUST_BASE_INFO_ID = f.CUST_BASE_INFO_ID
+		AND g.CUST_BASE_INFO_ID =
+		f.CUST_BASE_INFO_ID
+		AND f.AGENT_ID = h.AGENT_ID
+		AND d.PRODUCT_TYPE = '1'
+		AND a.RC_STATE = 'E'
+		AND
+		b.RC_STATE = 'E'
+		AND d.RC_STATE = 'E'
+		AND e.RC_STATE = 'E'
+		AND f.RC_STATE
+		= 'E'
+		AND g.RC_STATE = 'E'
+		AND h.RC_STATE = 'E'
+	</select>
+    
+    <!-- 获取期间分配短信map信息 -->
+    <select id="getIncomDisTradeInfo" resultType="java.util.Map" parameterType="java.util.Map">
+   SELECT
+c.CHN_NAME 'custName',
+a.PRODUCT_NAME 'productName',
+case when a.remark = null
+then a.remark else CONCAT('（',a.remark,'）') end 'remark',
+CASE c.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+b.TRADE_INFO_ID 'tradeInfoId',
+a.PRODUCT_ID 'productId',
+c.CUST_BASE_INFO_ID 'custBaseInfoId',
+x.MOBILE 'custMobile',
+y.AGENT_ID 'agentId',
+y.AGENT_NAME 'agentName',
+CASE y.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+y.MOBILE 'agentMobile',
+DATE_FORMAT(g.DISTRIBUTE_DATE,'%Y年%m月%d日') 'distributeDate',
+ROUND(f.EXPECTED_FEE_RATE,2) 'expectFeeRate',
+DATEDIFF(g.DISTRIBUTE_END_DATE,g.DISTRIBUTE_START_DATE)+1 'period',
+FORMAT(v.subscriptionFee,0) 'tradeTotalAssets',
+FORMAT(v.subscriptionFee*f.EXPECTED_FEE_RATE/100*(DATEDIFF(g.DISTRIBUTE_END_DATE,g.DISTRIBUTE_START_DATE)+1)/365,2) 'distributeMoney',
+FORMAT(1000000*f.EXPECTED_FEE_RATE/100*(DATEDIFF(g.DISTRIBUTE_END_DATE,g.DISTRIBUTE_START_DATE)+1)/365,2) 'distributeMoneyForManager'
+FROM
+t_pd_product a,
+t_trade_info b,
+t_cust_base_info c,
+t_trade_cust_info d,
+t_trade_product_info_view v,
+t_pd_wealth e,
+t_pd_wealth_fee_rate f,
+t_pd_wealth_income_dis g,
+t_cust_contact_info x,
+t_agent y
+WHERE 1=1
+AND a.PRODUCT_ID = #{productId}
+AND g.DISTRIBUTE_DATE = #{distributeDate}
+AND a.PRODUCT_ID = v.PRODUCT_ID
+AND b.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND b.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND a.PRODUCT_ID = e.PRODUCT_ID
+AND e.PD_WEALTH_ID = f.PD_WEALTH_ID
+AND e.PD_WEALTH_ID = g.PD_WEALTH_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND y.AGENT_ID = c.AGENT_ID
+AND (
+						CASE
+						WHEN v.beneficialType IS NOT NULL THEN
+							v.beneficialType = f.BENEFICIAL_TYPE
+						ELSE
+							1 = 1
+						END
+					)
+AND NOT EXISTS(SELECT 'X' FROM t_trade_funds_share_change x
+			WHERE x.ORIGIN_TRADE_INFO_ID = b.TRADE_INFO_ID
+			AND x.RC_STATE = 'E'  AND x.TRANSFER_ALL = '02'
+		)
+AND a.RC_STATE = 'E'
+AND b.RC_STATE = 'E'
+AND c.RC_STATE = 'E'
+AND d.RC_STATE = 'E'
+AND e.RC_STATE = 'E'
+AND f.RC_STATE = 'E'
+AND g.RC_STATE = 'E'
+AND x.RC_STATE = 'E'
+AND y.RC_STATE = 'E'
+    </select>
+    
+    <!-- 获取获取产品净值短信信息 -->
+    <select id="getPdwealthNetValueList" resultType="java.util.Map" parameterType="java.util.Map">
+		SELECT a.PD_WHEAL_NET_VALUE_ID 'pdWealthNetValueId',
+		ROUND(a.NET_VALUE,4) 'netValue',
+		DATE_FORMAT(a.PUBLIC_DATE,'%Y年%m月%d日') 'publicDate',
+		CASE WHEN a.EARN_RATE IS NOT NULL AND a.EARN_RATE != ""
+		THEN CONCAT('，和上次相比','',CONCAT(a.EARN_RATE,'%'))
+		ELSE a.EARN_RATE END  'earnRate',
+		b.PRODUCT_NAME 'productName',
+		e.TRADE_INFO_ID 'tradeInfoId',
+		g.CUST_BASE_INFO_ID 'custBaseInfoId',
+		g.CHN_NAME 'custName',
+		CASE g.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END 'appellation',
+		h.MOBILE 'custMobile',
+		i.AGENT_ID 'agentId',
+		i.AGENT_NAME 'agentName',
+		CASE i.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END 'agentAppellation',
+		i.MOBILE 'agentMobile'
+		FROM t_pd_wealth_net_value a,t_pd_product b,t_pd_wealth c,t_trade_product_info_view d,
+		t_trade_info e,t_trade_cust_info f,t_cust_base_info g,t_cust_contact_info h,t_agent i
+		WHERE a.PD_WHEAL_NET_VALUE_ID = #{pdWealthNetValueId}
+		AND a.PD_WEALTH_ID = c.PD_WEALTH_ID
+		AND b.PRODUCT_ID = c.PRODUCT_ID
+		AND d.PRODUCT_ID = b.PRODUCT_ID
+		AND d.TRADE_INFO_ID = e.TRADE_INFO_ID 
+		AND f.TRADE_INFO_ID = e.TRADE_INFO_ID
+		AND f.CUST_BASE_INFO_ID = g.CUST_BASE_INFO_ID
+		AND g.CUST_BASE_INFO_ID = h.CUST_BASE_INFO_ID
+		AND g.AGENT_ID = i.AGENT_ID
+		AND e.TRADE_STAUS = '10'
+		AND
+		(CASE
+		WHEN
+		(SELECT
+		MIN(x.REMAINING_TOTAL_SHARE)
+		FROM
+		t_redemption_info x
+		WHERE
+		x.CUSTOMER_NO = g.CUSTOMER_NO
+		AND x.PD_PRODUCT_ID = b.PRODUCT_ID
+		AND x.RC_STATE = 'E'
+		AND x.REDEMPTION_STATUS = '04'
+		) IS NOT NULL
+		THEN
+		(SELECT
+		MIN(x.REMAINING_TOTAL_SHARE)
+		FROM
+		t_redemption_info x
+		WHERE
+		x.CUSTOMER_NO = g.CUSTOMER_NO
+		AND x.PD_PRODUCT_ID = b.PRODUCT_ID
+		AND x.RC_STATE = 'E'
+		AND x.REDEMPTION_STATUS = '04'
+		)
+		ELSE
+		1
+		END) > 0
+		AND b.PRODUCT_TYPE = '1'
+		AND b.PRODUCT_SUB_TYPE = '03'
+		AND a.RC_STATE = 'E'
+		AND b.RC_STATE = 'E'
+		AND c.RC_STATE = 'E'
+		AND e.RC_STATE = 'E'
+		AND f.RC_STATE = 'E'
+		AND g.RC_STATE = 'E'
+		AND h.RC_STATE = 'E'
+		AND i.RC_STATE = 'E'
+		GROUP BY g.CUST_BASE_INFO_ID
+    </select>
+  <!-- 获取同一批次所有短信信息 -->  
+    <select id="getSysSmsDetailInfoList" parameterType="java.util.Map" resultType="java.util.Map">
+		    	 SELECT a.SYS_SMS_INFO_ID 'sysSmsInfoId',
+a.SYS_SMS_BATCH_ID 'sysSmsBatchId',
+a.BUSINESS_NO 'tradeInfoId',
+b.TRADE_NO 'tradeNo',
+a.SEND_OBJ_NAME 'sendObjName',
+a.SEND_MOBILE 'sendMobile',
+FUNC_GET_CODE_NAME('smsSendObjType',a.SEND_OBJ_TYPE) 'sendObjTypeName',
+b.TRADE_TOTAL_ASSETS 'money',
+c.AGENT_NAME 'agentName',
+c.MOBILE 'agentMobile',
+a.SEND_CONTENT 'sendContent',
+a.SEND_STATUS 'sendStatus',
+FUNC_GET_CODE_NAME('smsSendStatus',a.SEND_STATUS) 'sendStatusName'
+FROM t_sys_sms_info a,t_trade_info b,t_agent c
+WHERE a.SYS_SMS_BATCH_ID = #{sysSmsBatchId}
+AND a.BUSINESS_NO = b.TRADE_INFO_ID
+AND b.AGENT_ID = c.AGENT_ID
+AND a.RC_STATE = 'E'
+AND b.RC_STATE = 'E'
+AND c.RC_STATE = 'E'
+    </select>
+    
+    <!-- 获取到期清算短信map信息 -->
+    <select id="getIncomDisAllTradeInfo" resultType="java.util.Map" parameterType="java.util.Map">
+ SELECT
+c.CHN_NAME 'custName',
+a.PRODUCT_NAME 'productName',
+case when a.remark = null
+then a.remark else CONCAT('（',a.remark,'）') end 'remark',
+CASE c.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+b.TRADE_INFO_ID 'tradeInfoId',
+a.PRODUCT_ID 'productId',
+c.CUST_BASE_INFO_ID 'custBaseInfoId',
+x.MOBILE 'custMobile',
+y.AGENT_ID 'agentId',
+y.AGENT_NAME 'agentName',
+CASE y.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+y.MOBILE 'agentMobile',
+DATE_FORMAT(e.FOUND_DATE,'%Y年%m月%d日') 'foundDate',
+DATE_FORMAT(FUNC_FOUNDATE_CLOSED_ENDDATE(
+e.FOUND_DATE,
+CASE WHEN
+f.CLOSE_DPERIOD IS NOT NULL
+THEN f.CLOSE_DPERIOD
+ELSE e.CLOSE_DPERIODS
+END,
+e.CLOSE_DPERIOD_UNIT
+),'%Y年%m月%d日') 'endDate',
+DATE_ADD(FUNC_FOUNDATE_CLOSED_ENDDATE(
+e.FOUND_DATE,
+CASE WHEN
+f.CLOSE_DPERIOD IS NOT NULL
+THEN f.CLOSE_DPERIOD
+ELSE e.CLOSE_DPERIODS
+END,
+e.CLOSE_DPERIOD_UNIT
+),INTERVAL 3 DAY) 'intoAccountTime',
+g.DISTRIBUTE_DATE 'distributeDate',
+ROUND(f.EXPECTED_FEE_RATE,2) 'expectFeeRate',
+DATEDIFF(g.DISTRIBUTE_END_DATE,g.DISTRIBUTE_START_DATE)+1 'period',
+FORMAT(v.subscriptionFee,0) 'tradeTotalAssets',
+CONCAT(FORMAT(v.subscriptionFee+v.subscriptionFee*f.EXPECTED_FEE_RATE/100*
+(DATEDIFF(g.DISTRIBUTE_END_DATE,g.DISTRIBUTE_START_DATE)+1)/365,2),'','') 'subscriptionFee',
+CONCAT(FORMAT(1000000+1000000*f.EXPECTED_FEE_RATE/100*
+(DATEDIFF(g.DISTRIBUTE_END_DATE,g.DISTRIBUTE_START_DATE)+1)/365,2),'','') 'distributeMoneyForManager'
+FROM
+t_pd_product a,
+t_trade_info b,
+t_cust_base_info c,
+t_trade_cust_info d,
+t_trade_product_info_view v,
+t_pd_wealth e,
+t_pd_wealth_fee_rate f,
+t_pd_wealth_income_dis g,
+t_cust_contact_info x,
+t_agent y
+WHERE 1=1
+AND a.PRODUCT_ID = #{productId}
+AND g.DISTRIBUTE_DATE = #{distributeDate}
+AND a.PRODUCT_ID = v.PRODUCT_ID
+AND b.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND b.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND a.PRODUCT_ID = e.PRODUCT_ID
+AND e.PD_WEALTH_ID = f.PD_WEALTH_ID
+AND e.PD_WEALTH_ID = g.PD_WEALTH_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND y.AGENT_ID = c.AGENT_ID
+AND (
+						CASE
+						WHEN v.beneficialType IS NOT NULL THEN
+							v.beneficialType = f.BENEFICIAL_TYPE
+						ELSE
+							1 = 1
+						END
+					)
+AND ABS(DATEDIFF(FUNC_FOUNDATE_CLOSED_ENDDATE(
+e.FOUND_DATE,
+CASE WHEN
+f.CLOSE_DPERIOD IS NOT NULL
+THEN f.CLOSE_DPERIOD
+ELSE e.CLOSE_DPERIODS
+END,
+e.CLOSE_DPERIOD_UNIT
+),g.DISTRIBUTE_DATE)) <![CDATA[<=]]> 8
+AND NOT EXISTS(SELECT 'X' FROM t_trade_funds_share_change x
+			WHERE x.ORIGIN_TRADE_INFO_ID = b.TRADE_INFO_ID
+			AND x.RC_STATE = 'E'  AND x.TRANSFER_ALL = '02'
+		)
+AND a.RC_STATE = 'E'
+AND b.RC_STATE = 'E'
+AND c.RC_STATE = 'E'
+AND d.RC_STATE = 'E'
+AND e.RC_STATE = 'E'
+AND f.RC_STATE = 'E'
+AND g.RC_STATE = 'E'
+AND x.RC_STATE = 'E'
+AND y.RC_STATE = 'E'
+    </select>
+    <!-- 获取净值短信营销人员信息 -->
+    <select id="getDefMap" parameterType="java.util.Map" resultType="java.util.Map">
+		    	 SELECT a.AGENT_ID "agentId",
+a.AGENT_NAME "agentName",
+CASE a.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+a.MOBILE "agentPhone"
+FROM t_agent a
+where a.AGENT_CODE = #{codeName}
+AND a.RC_STATE = "E"
+    </select>
+    <!-- 获取春节祝福短信客户和理财经理信息
+    <select id="getCustInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		    	 SELECT a.CUST_BASE_INFO_ID "custBaseInfoId",
+a.CHN_NAME "custName",
+b.MOBILE "custMobile",
+CASE a.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "custAppellation"
+FROM t_cust_base_info a,t_cust_contact_info b
+WHERE a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+    </select>
+    <select id="getAllAgentInfo" parameterType="java.util.Map" resultType="java.util.Map">
+SELECT a.AGENT_ID "agentId",
+a.AGENT_NAME "agentName",
+a.MOBILE "agentMobile",
+CASE a.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation"
+FROM t_agent a
+WHERE a.WORK_STATE = "1"
+AND a.RC_STATE = "E"
+    </select> -->
+    <!-- 查询客户相关信息 -->
+     <select id="getCustMobile" parameterType="java.util.Map" resultType="java.util.Map">
+     SELECT
+a.CHN_NAME "custName",
+CASE WHEN
+a.SEX = 'M'
+THEN '先生' 
+ELSE '女士'
+END "custAppellation",
+c.AGENT_NAME "agentName",
+CASE WHEN
+a.SEX = 'M'
+THEN '先生' 
+ELSE '女士'
+END  "agentAppellation",
+c.AGENT_ID "agentId",
+c.MOBILE "agentMobile",
+b.mobile "mobile"
+FROM
+t_cust_base_info a,
+t_cust_contact_info b,
+t_agent c
+WHERE
+a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID
+AND a.AGENT_ID = c.AGENT_ID
+AND a.RC_STATE = 'E'
+AND b.RC_STATE = 'E'
+AND c.RC_STATE = 'E'
+AND a.CUST_BASE_INFO_ID = #{custBaseInfoId}
+     </select>
+      <select id="getCustEmail" parameterType="java.util.Map" resultType="java.util.Map">
+     SELECT
+a.CHN_NAME "custName",
+CASE WHEN
+a.SEX = 'M'
+THEN '先生' 
+ELSE '女士'
+END "custAppellation",
+b.MOBILE "mobile",
+c.AGENT_NAME "agentName",
+CASE WHEN
+a.SEX = 'M'
+THEN '先生' 
+ELSE '女士'
+END  "agentAppellation",
+c.AGENT_ID "agentId",
+c.MOBILE "agentMobile",
+b.email "email"
+FROM
+t_cust_base_info a,
+t_cust_contact_info b,
+t_agent c
+WHERE
+a.CUST_BASE_INFO_ID = b.CUST_BASE_INFO_ID
+AND a.AGENT_ID = c.AGENT_ID
+AND a.RC_STATE = 'E'
+AND b.RC_STATE = 'E'
+AND c.RC_STATE = 'E'
+AND a.CUST_BASE_INFO_ID = #{custBaseInfoId}
+     </select>
+     
+      <select id="getTradeInfoByProductId" resultType="java.util.Map" parameterType="java.util.Map">
+				SELECT
+				c.CHN_NAME 'custName',
+				a.PRODUCT_NAME 'productName',
+				case when a.remark = null
+				then a.remark else CONCAT('（',a.remark,'）') end 'remark',
+				CASE c.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+				b.TRADE_INFO_ID 'tradeInfoId',
+				a.PRODUCT_ID 'productId',
+				c.CUST_BASE_INFO_ID 'custBaseInfoId',
+				x.MOBILE 'custMobile',
+				y.AGENT_ID 'agentId',
+				y.AGENT_NAME 'agentName',
+				CASE y.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+				y.MOBILE 'agentMobile'
+				FROM
+				t_pd_product a,
+				t_trade_info b,
+				t_cust_base_info c,
+				t_trade_cust_info d,
+				t_trade_product_info_view v,
+				t_pd_wealth e,
+				t_pd_wealth_fee_rate f,
+				t_pd_wealth_income_dis g,
+				t_cust_contact_info x,
+				t_agent y
+				WHERE 1=1
+				AND a.PRODUCT_ID = #{productId}
+				AND g.DISTRIBUTE_DATE = #{distributeDate}
+				AND b.TRADE_STAUS in('10','11','12','13','14','15') 
+				AND a.PRODUCT_ID = v.PRODUCT_ID
+				AND b.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND b.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND e.PD_WEALTH_ID = f.PD_WEALTH_ID
+				AND e.PD_WEALTH_ID = g.PD_WEALTH_ID
+				AND a.PRODUCT_ID = e.PRODUCT_ID
+				AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+				AND y.AGENT_ID = c.AGENT_ID
+				AND (
+										CASE
+										WHEN v.beneficialType IS NOT NULL THEN
+											v.beneficialType = f.BENEFICIAL_TYPE
+										ELSE
+											1 = 1
+										END
+									)
+				AND ABS(DATEDIFF(FUNC_FOUNDATE_CLOSED_ENDDATE(
+				e.FOUND_DATE,
+				CASE WHEN
+				f.CLOSE_DPERIOD IS NOT NULL
+				THEN f.CLOSE_DPERIOD
+				ELSE e.CLOSE_DPERIODS
+				END,
+				e.CLOSE_DPERIOD_UNIT
+				),g.DISTRIBUTE_DATE)) <![CDATA[<=]]> 8
+				AND NOT EXISTS(SELECT 'X' FROM t_trade_funds_share_change x
+				WHERE x.ORIGIN_TRADE_INFO_ID = b.TRADE_INFO_ID
+				AND x.RC_STATE = 'E'  AND x.TRANSFER_ALL = '02'
+					)
+				AND a.RC_STATE = 'E'
+				AND b.RC_STATE = 'E'
+				AND c.RC_STATE = 'E'
+				AND d.RC_STATE = 'E'
+				AND e.RC_STATE = 'E'
+				AND f.RC_STATE = 'E'
+				AND g.RC_STATE = 'E'
+				AND x.RC_STATE = 'E'
+				AND y.RC_STATE = 'E'
+    </select>
+    
+    <select id="getTradeInfoByDistributeDate" resultType="java.util.Map" parameterType="java.util.Map">
+				SELECT
+				c.CHN_NAME 'custName',
+				a.PRODUCT_NAME 'productName',
+				case when a.remark = null
+				then a.remark else CONCAT('（',a.remark,'）') end 'remark',
+				CASE c.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+				b.TRADE_INFO_ID 'tradeInfoId',
+				a.PRODUCT_ID 'productId',
+				c.CUST_BASE_INFO_ID 'custBaseInfoId',
+				x.MOBILE 'custMobile',
+				y.AGENT_ID 'agentId',
+				y.AGENT_NAME 'agentName',
+				CASE y.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+				y.MOBILE 'agentMobile'
+				FROM
+				t_pd_product a,
+				t_trade_info b,
+				t_cust_base_info c,
+				t_trade_cust_info d,
+				t_trade_product_info_view v,
+				t_pd_wealth e,
+				t_pd_wealth_fee_rate f,
+				t_pd_wealth_income_dis g,
+				t_cust_contact_info x,
+				t_agent y
+				WHERE 1=1
+				AND a.PRODUCT_ID = #{productId}
+				AND g.DISTRIBUTE_DATE = #{distributeDate}
+				AND b.TRADE_STAUS in('10','11','12','13','14','15') 
+				AND a.PRODUCT_ID = v.PRODUCT_ID
+				AND b.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND b.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND e.PD_WEALTH_ID = f.PD_WEALTH_ID
+				AND e.PD_WEALTH_ID = g.PD_WEALTH_ID
+				AND a.PRODUCT_ID = e.PRODUCT_ID
+				AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+				AND y.AGENT_ID = c.AGENT_ID
+				AND (
+										CASE
+										WHEN v.beneficialType IS NOT NULL THEN
+											v.beneficialType = f.BENEFICIAL_TYPE
+										ELSE
+											1 = 1
+										END
+									)
+				AND NOT EXISTS(SELECT 'X' FROM t_trade_funds_share_change x
+				WHERE x.ORIGIN_TRADE_INFO_ID = b.TRADE_INFO_ID
+				AND x.RC_STATE = 'E'  AND x.TRANSFER_ALL = '02'
+					)
+				AND ABS(DATEDIFF(CURDATE(),g.DISTRIBUTE_DATE)) <![CDATA[<=]]> 8
+				AND a.RC_STATE = 'E'
+				AND b.RC_STATE = 'E'
+				AND c.RC_STATE = 'E'
+				AND d.RC_STATE = 'E'
+				AND e.RC_STATE = 'E'
+				AND f.RC_STATE = 'E'
+				AND g.RC_STATE = 'E'
+				AND x.RC_STATE = 'E'
+				AND y.RC_STATE = 'E'
+    </select>
+    
+    <select id="getStockTradeByDistributeDate" resultType="java.util.Map" parameterType="java.util.Map">
+				SELECT
+				c.CHN_NAME 'custName',
+				a.PRODUCT_NAME 'productName',
+				case when a.remark = null
+				then a.remark else CONCAT('（',a.remark,'）') end 'remark',
+				CASE c.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "appellation",
+				b.TRADE_INFO_ID 'tradeInfoId',
+				a.PRODUCT_ID 'productId',
+				c.CUST_BASE_INFO_ID 'custBaseInfoId',
+				x.MOBILE 'custMobile',
+				y.AGENT_ID 'agentId',
+				y.AGENT_NAME 'agentName',
+				CASE y.SEX WHEN 'M' THEN  '先生'  WHEN 'F' THEN	'女士' ELSE  NULL   END "agentAppellation",
+				y.MOBILE 'agentMobile',
+				g.DISTRIBUTE_DATE 'distributeDate',
+				g.DISTRIBUTE_MONEY 'distributeMoney',
+				ROUND(IFNULL(b.TRADE_TOTAL_ASSETS/1000000*g.DISTRIBUTE_MONEY,0),2) 'disAmount',
+				CONCAT(ROUND(IFNULL(g.DISTRIBUTE_MONEY/10000,0),2),'%') "disRate",
+				(
+					select ROUND(IFNULL(SUM(x.DISTRIBUTE_MONEY),0),2) 
+					from t_pd_wealth_stock_dis x where x.PD_WEALTH_ID = e.PD_WEALTH_ID
+					AND x.RC_STATE = 'E' AND x.DISTRIBUTE_DATE <![CDATA[<=]]> #{distributeDate}
+					)  "sumDisAmount",
+				(
+					select CONCAT(ROUND(IFNULL(SUM(x.DISTRIBUTE_MONEY)/10000,0),2),'%') 
+					from t_pd_wealth_stock_dis x where x.PD_WEALTH_ID = e.PD_WEALTH_ID
+					AND x.RC_STATE = 'E' AND x.DISTRIBUTE_DATE <![CDATA[<=]]> #{distributeDate}
+					)  "sumDisRate"
+				FROM
+				t_pd_product a,
+				t_trade_info b,
+				t_cust_base_info c,
+				t_trade_cust_info d,
+				t_trade_product_info_view v,
+				t_pd_wealth e,
+				t_pd_wealth_stock_dis g,
+				t_cust_contact_info x,
+				t_agent y
+				WHERE 1=1
+				AND a.PRODUCT_ID = #{productId}
+				AND g.DISTRIBUTE_DATE = #{distributeDate}
+				AND a.PRODUCT_ID = v.PRODUCT_ID
+				AND b.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND b.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND e.PD_WEALTH_ID = g.PD_WEALTH_ID
+				AND a.PRODUCT_ID = e.PRODUCT_ID
+				AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+				AND y.AGENT_ID = c.AGENT_ID
+				AND NOT EXISTS(SELECT 'X' FROM t_trade_funds_share_change x
+				WHERE x.ORIGIN_TRADE_INFO_ID = b.TRADE_INFO_ID
+				AND x.RC_STATE = 'E'  AND x.TRANSFER_ALL = '02'
+					)
+				AND a.RC_STATE = 'E'
+				AND b.RC_STATE = 'E'
+				AND c.RC_STATE = 'E'
+				AND d.RC_STATE = 'E'
+				AND e.RC_STATE = 'E'
+				AND g.RC_STATE = 'E'
+				AND x.RC_STATE = 'E'
+				AND y.RC_STATE = 'E'
+    </select>
+</mapper>

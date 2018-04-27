@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.fms.service.mapper.TradeStatusServiceMapper">
+
+  	<sql id="tradeInputQueryTradeListCondition">
+  		<if test="agencyComId != null and agencyComId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_TRADE_PRODUCT_INFO B,T_PD_PRODUCT C
+                    WHERE B.PRODUCT_ID = C.PRODUCT_ID
+                    AND B.TRADE_INFO_ID = A.TRADE_INFO_ID
+                    AND C.AGENCY_COM_ID = #{agencyComId}
+                    AND B.RC_STATE = 'E'
+                    AND C.RC_STATE = 'E' )
+    	</if>
+    	<if test="tradeDateStart != null and tradeDateStart !=''" >
+      		AND A.TRADE_DATE <![CDATA[>=]]> '${tradeDateStart}'
+    	</if>
+    	<if test="tradeDateEnd != null and tradeDateEnd !=''" >
+      		AND A.TRADE_DATE <![CDATA[<=]]> '${tradeDateEnd}'
+    	</if>
+    	<if test="comId != null and comId !=''" >
+      		AND A.COMPANY_ID = #{comId}
+    	</if>
+    	<if test="productId!=null and productId !=''">
+    		AND EXISTS(SELECT 'X' FROM T_TRADE_PRODUCT_INFO B,T_PD_PRODUCT C
+                       WHERE B.PRODUCT_ID = C.PRODUCT_ID 
+                       AND B.TRADE_INFO_ID = A.TRADE_INFO_ID 
+                       AND C.PRODUCT_ID = #{productId}
+                       AND B.RC_STATE = 'E'
+                       AND C.RC_STATE = 'E')
+    	</if>
+		<if test="tradeNo != null and tradeNo !=''" >
+      		AND A.TRADE_NO = #{tradeNo}
+    	</if>
+    	<if test="tradeInfoNo != null and tradeInfoNo !=''" >
+      		AND A.TRADE_INFO_NO = #{tradeInfoNo}
+    	</if>
+    	<if test="chnName != null and chnName !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_TRADE_CUST_INFO B,T_CUST_BASE_INFO C
+                        WHERE B.TRADE_INFO_ID = A.TRADE_INFO_ID AND B.CUST_BASE_INFO_ID = C.CUST_BASE_INFO_ID
+                        AND B.RC_STATE = 'E' AND C.CHN_NAME LIKE '%${chnName}%')
+    	</if>
+    	<if test="tradeStatus != null and tradeStatus !=''" >
+      		AND A.trade_staus = #{tradeStatus}
+    	</if>
+  	</sql>
+  	
+  		<sql id="queryTradeInfoListPrivilegeControl">
+		<!-- 以下是查询权限控制 3-本机构及下属机构数据，2-本机构数据，1-本人数据-->
+		<!--F  -->
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="3"'>
+    		AND A.OPER_COM_ID IN(
+   				<!-- SELECT C.COM_ID
+				FROM T_DEF_COM C 
+				WHERE C.RC_STATE = 'E'
+					AND C.STATE='01'
+					START WITH C.COM_ID = #{operComId} CONNECT BY PRIOR C.COM_ID = C.PARENT_COM_ID -->
+					select T.COM_ID from t_def_com t where FIND_IN_SET(t.COM_ID, queryChildrenNodeInfo(#{operComId}))
+    		)
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="2" '>
+    		AND A.OPER_COM_ID = #{operComId} 
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="1" '>
+    		AND (EXISTS(SELECT'X' FROM T_AGENT WHERE USER_ID = #{createUserId} AND AGENT_ID =A.AGENT_ID ) 
+    					OR A.CREATE_USER_ID = #{createUserId})
+    	</if>
+	</sql>
+	<!-- s -->
+  	<select id="getTradeStausServiceList" parameterType="java.util.Map" resultType="java.util.Map">
+  	
+  		select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+            SELECT (SELECT @rownum := 0),
+         	   A.trade_info_id "tradeInfoId", 
+               A.TRADE_NO "tradeNo", 
+               A.TRADE_TYPE "tradeType", 
+               CASE  a.trade_Type
+                   WHEN 2 THEN
+                      (select max(c.CHN_NAME)
+                         from T_TRADE_CUST_ROLE_INFO b,
+                              T_CUST_BASE_INFO       c,
+                              t_trade_cust_info      d
+                        where D.TRADE_INFO_ID = a.TRADE_INFO_ID
+                          and D.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+                          and b.trade_cust_info_id = d.trade_cust_info_id
+                          and b.role_type = '1'
+                          and b.rc_state = 'E'
+                          and c.rc_state = 'E'
+                          AND d.rc_state = 'E')
+                     WHEN 1  THEN
+                      (select c.CHN_NAME
+                         from t_trade_cust_info b, T_CUST_BASE_INFO c
+                        where b.TRADE_INFO_ID = a.TRADE_INFO_ID
+                          and b.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+                          and b.rc_state = 'E'
+                          and c.rc_state = 'E') END "tradeAppant", 
+                (select c.cust_base_info_id
+                         from t_trade_cust_info b, T_CUST_BASE_INFO c
+                        where b.TRADE_INFO_ID = a.TRADE_INFO_ID
+                          and b.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+                          and b.rc_state = 'E'
+                          and c.rc_state = 'E') "custBaseInfoId",
+                (select c.INVEST_CUSTOMER_TYPE
+                         from t_trade_cust_info b, T_CUST_BASE_INFO c
+                        where b.TRADE_INFO_ID = a.TRADE_INFO_ID
+                          and b.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+                          and b.rc_state = 'E'
+                          and c.rc_state = 'E') "investCustomerType",          
+               A.TRADE_INFO_NO "tradeInfoNo", 
+               DATE_FORMAT(A.TRADE_DATE, '%Y-%m-%d') "tradeDate", 
+               DATE_FORMAT(a.trade_input_date, '%Y-%m-%d') "tradeInputDate", 
+               A.CURRENCY "currency", 
+               A.AGENT_ID "agentId", 
+               (select CONCAT(group_concat(e.product_name),'')
+                  from t_trade_product_info_view d, t_pd_product e
+                 where d.TRADE_INFO_ID = a.trade_info_id
+                   and d.PRODUCT_ID = e.product_id) "productName",
+                   (select e.product_type
+                  from t_trade_product_info_view d, t_pd_product e
+                 where d.TRADE_INFO_ID = a.trade_info_id
+                   and d.PRODUCT_ID = e.product_id) "productType",
+                   (select e.product_sub_type
+                  from t_trade_product_info_view d, t_pd_product e
+                 where d.TRADE_INFO_ID = a.trade_info_id
+                   and d.PRODUCT_ID = e.product_id) "productSubType",    
+               (select CONCAT(group_concat(f.agency_name),'')
+                  from t_trade_product_info_view d,
+                       t_pd_product              e,
+                       t_agency_com              f
+                 where d.TRADE_INFO_ID = a.trade_info_id
+                   and d.PRODUCT_ID = e.product_id
+                   and e.agency_com_id = f.agency_com_id) "agencyComName", 
+               (select agent_name from t_agent where agent_id = a.agent_id) "agentName", 
+               A.COMPANY_ID "companyId", 
+               (select com_name from t_def_com where com_id = a.company_id) "comName", 
+               A.STORE_ID "storeId", 
+               (select store_name
+                  from t_def_store
+                 where store_id = a.store_id) "storeName", 
+               A.TRADE_COM_ID "tradeComId", 
+               (select com_name from t_def_com where com_id = a.TRADE_COM_ID) "tradeComName", 
+               A.TRADE_STORE_ID "tradeStoreId", 
+              <!--  (select store_name
+                  from t_def_store
+                 where store_id = a.TRADE_STORE_ID) "tradeStoreName",  -->
+               A.TRADE_TOTAL_ASSETS "tradeTotalAssets", 
+               (case when a.trade_type = '1' 
+               	     then (SELECT SUM(IFNULL(B.ACTU_SUBSCRIPTION_AMOUNT,0)) 
+								FROM T_TRADE_STATUS_INFO B 
+								WHERE B.TRADE_INFO_ID = a.trade_info_id 
+								AND B.TRADE_STATUS in('10' ,'11' ,'12' ,'13','14' ) 
+								AND B.RC_STATE = 'E')
+					 when a.trade_type = '2'
+					 then (SELECT SUM(IFNULL(B.ACTU_PREMIUM,0)) 
+								FROM T_TRADE_STATUS_INFO B 
+								WHERE B.TRADE_INFO_ID = a.trade_info_id 
+								AND B.TRADE_STATUS = '06' 
+								AND B.RC_STATE = 'E') end) "actuTradeTotalAssets",
+               a.trade_staus "tradeStaus", 
+               (select code_name
+                  from t_def_code
+                 where code_type = 'tradeStatus'
+                   and code = a.trade_staus) "tradeStausName"
+          FROM T_TRADE_INFO A
+         WHERE 1 = 1
+         	and a.trade_staus not in('01','02','03')
+           	and RC_STATE = 'E'
+	
+				<include refid="tradeInputQueryTradeListCondition"/>
+				<include refid="queryTradeInfoListPrivilegeControl"/>
+				
+			order by a.trade_info_id desc
+ 			) nAlias
+		) tAlias where r_rownum >= #{startIndex} and #{endIndex} >= r_rownum
+    </select> 
+
+	<select id="getTradeStausTotal" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_TRADE_INFO A        
+		WHERE 1=1 
+		and RC_STATE = 'E'
+		and a.trade_staus not in('01','02','03')
+		<include refid="tradeInputQueryTradeListCondition"/>
+		<include refid="queryTradeInfoListPrivilegeControl"/>
+    </select>
+    <!-- s -->
+    <select id="getTradeDetailInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT A.trade_info_id "tradeInfoId", 
+               A.TRADE_NO "tradeNo", 
+               A.TRADE_TYPE "tradeType", 
+              CASE a.trade_Type
+                    WHEN  2 THEN
+                      (select max(c.CHN_NAME)
+                         from T_TRADE_CUST_ROLE_INFO b,
+                              T_CUST_BASE_INFO       c,
+                              t_trade_cust_info      d
+                        where D.TRADE_INFO_ID = a.TRADE_INFO_ID
+                          and D.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+                          and b.trade_cust_info_id = d.trade_cust_info_id
+                          and b.role_type = '1'
+                          and b.rc_state = 'E'
+                          and c.rc_state = 'E'
+                          AND d.rc_state = 'E')
+                    WHEN  1 THEN
+                      (select c.CHN_NAME
+                         from t_trade_cust_info b, T_CUST_BASE_INFO c
+                        where b.TRADE_INFO_ID = a.TRADE_INFO_ID
+                          and b.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+                          and b.rc_state = 'E'
+                          and c.rc_state = 'E')END "tradeAppant", 
+               A.TRADE_INFO_NO "tradeInfoNo", 
+               DATE_FORMAT(A.TRADE_DATE, '%Y-%m-%d') "tradeDate", 
+               DATE_FORMAT(a.trade_input_date, '%Y-%m-%d') "tradeInputDate", 
+               A.CURRENCY "currency", 
+               A.AGENT_ID "agentId", 
+               (select concat(group_concat(e.product_name),'')
+                  from t_trade_product_info_view d, t_pd_product e
+                 where d.TRADE_INFO_ID = a.trade_info_id
+                   and d.PRODUCT_ID = e.product_id) "productName", 
+               (select concat(group_concat(f.agency_name),'')
+                  from t_trade_product_info_view d,
+                       t_pd_product              e,
+                       t_agency_com              f
+                 where d.TRADE_INFO_ID = a.trade_info_id
+                   and d.PRODUCT_ID = e.product_id
+                   and e.agency_com_id = f.agency_com_id) "agencyComName", 
+               (select agent_name from t_agent where agent_id = a.agent_id) "agentName", 
+               A.COMPANY_ID "companyId", 
+               (select com_name from t_def_com where com_id = a.company_id) "comName", 
+               A.STORE_ID "storeId", 
+               (select store_name
+                  from t_def_store
+                 where store_id = a.store_id) "storeName", 
+               A.TRADE_COM_ID "tradeComId", 
+               (select com_name from t_def_com where com_id = a.TRADE_COM_ID) "tradeComName", 
+               A.TRADE_STORE_ID "tradeStoreId", 
+               (select store_name
+                  from t_def_store
+                 where store_id = a.TRADE_STORE_ID) "tradeStoreName", 
+               A.TRADE_TOTAL_ASSETS "tradeTotalAssets", 
+               a.trade_staus "tradeStaus", 
+               (select code_name
+                  from t_def_code
+                 where code_type = 'tradeStatus'
+                   and code = a.trade_staus) "tradeStausName",
+               (CASE WHEN(SELECT COUNT(1) FROM T_PD_PRODUCT B,T_TRADE_PRODUCT_INFO C 
+			                 WHERE B.PRODUCT_ID = C.PRODUCT_ID AND C.TRADE_INFO_ID = A.TRADE_INFO_ID 
+			                 AND B.PRODUCT_TYPE = '1' AND B.PRODUCT_SUB_TYPE = '02'
+			                 AND B.RC_STATE = 'E' AND C.RC_STATE = 'E')>0
+			     THEN(SELECT DATE_FORMAT(max(D.FOUND_DATE),'%Y-%m-%d') FROM T_PD_PRODUCT B,T_TRADE_PRODUCT_INFO C,T_PD_WEALTH D
+			                 WHERE B.PRODUCT_ID = C.PRODUCT_ID AND C.PRODUCT_ID = D.PRODUCT_ID
+			                 AND C.TRADE_INFO_ID = A.TRADE_INFO_ID 
+			                 AND B.RC_STATE = 'E' AND C.RC_STATE = 'E' AND D.RC_STATE = 'E')
+			     WHEN(SELECT COUNT(1) FROM T_PD_PRODUCT B,T_TRADE_PRODUCT_INFO C 
+			                 WHERE B.PRODUCT_ID = C.PRODUCT_ID AND C.TRADE_INFO_ID = A.TRADE_INFO_ID 
+			                 AND B.PRODUCT_TYPE = '1' AND B.PRODUCT_SUB_TYPE != '02'
+			                 AND B.RC_STATE = 'E' AND C.RC_STATE = 'E')>0
+			     THEN(SELECT max(B.PARAM_VALUE) FROM T_TRADE_PRODUCT_INFO B
+			                 WHERE B.TRADE_INFO_ID = A.TRADE_INFO_ID 
+			                 AND B.PARAM_CODE = 'expectOpenDay'
+			                 AND B.RC_STATE = 'E')
+			     ELSE '' END)"expectOpenDay",
+					  (SELECT
+								D.NET_VALUE
+								FROM
+								t_pd_product B,
+								t_pd_wealth C,
+								t_pd_wealth_net_value D,
+								t_trade_product_info_view E
+								WHERE
+								B.PRODUCT_ID = E.PRODUCT_ID
+								AND A.TRADE_INFO_ID = E.TRADE_INFO_ID
+								AND B.PRODUCT_ID = C.PRODUCT_ID
+								AND D.PD_WEALTH_ID=C.PD_WEALTH_ID
+								AND D.PUBLIC_DATE=expectOpenDay
+								AND B.RC_STATE = 'E'
+								AND C.RC_STATE = 'E'
+								AND D.RC_STATE = 'E'
+								) "netValue",
+						(SELECT
+								B.PRODUCT_SUB_TYPE
+								FROM
+								t_pd_product B,
+								t_trade_product_info_view C
+								WHERE
+								A.TRADE_INFO_ID = C.TRADE_INFO_ID
+								AND B.PRODUCT_ID = C.PRODUCT_ID
+								AND B.RC_STATE = 'E'
+								) "productSubType"
+          FROM T_TRADE_INFO A
+         WHERE 1 = 1
+           and RC_STATE = 'E'
+           and A.TRADE_INFO_ID = #{tradeInfoId}
+    </select>
+    
+    <!-- s -->
+    <select id="getLastTradeStatusInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    SELECT
+		B.TRADE_STATUS_INFO_ID "tradeStatusInfoId",
+		B.POLICY_NO "policyNo",
+		B.ACTU_PREMIUM "actuPremium",
+		B.ACTU_SUBSCRIPTION_AMOUNT "actuSubscriptionAmount",
+		B.SUBSCRIPTION_COPIES "subscriptionCopies",
+		DATE_FORMAT(B.STATUS_DATE, '%Y-%m-%d') "statusDate",
+		B.TRADE_STATUS "tradeStatus"
+	FROM
+		T_TRADE_INFO A,
+		T_TRADE_STATUS_INFO B
+	WHERE
+		A.TRADE_INFO_ID = B.TRADE_INFO_ID
+		AND A.TRADE_STAUS = B.TRADE_STATUS
+		AND A.TRADE_INFO_ID = #{tradeInfoId}
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+    </select>
+    
+    <!-- s -->
+    <select id="getRiskTradeInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    	SELECT DISTINCT A.TRADE_INFO_ID "tradeInfoId",A.TRADE_NO "tradeNo",C.PRODUCT_ID "productId",
+		       C.PRODUCT_NAME "productName",A.TRADE_INFO_NO "prtNo"
+		FROM T_TRADE_INFO A,T_TRADE_PRODUCT_INFO B,T_PD_PRODUCT C
+		WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+		AND B.PRODUCT_ID = C.PRODUCT_ID
+		AND A.TRADE_INFO_ID = #{tradeInfoId}
+		AND A.RC_STATE = 'E'
+		AND B.RC_STATE = 'E'
+		AND C.RC_STATE = 'E'
+    </select>
+    
+    <!-- s -->
+    <select id="getRiskTradeStatusInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    	SELECT A.TRADE_STATUS_INFO_ID "tradeStatusInfoId",A.TRADE_INFO_ID "tradeInfoId",C.TRADE_NO "tradeNo",
+	       B.PRODUCT_ID "productId",B.PRODUCT_NAME "productName",A.POLICY_NO "policyNo",A.TRADE_STATUS "tradeStatus",
+	       FUNC_GET_CODE_NAME('tradeStatus',A.TRADE_STATUS) "tradeStatusName",
+	       DATE_FORMAT(A.STATUS_DATE,'%Y-%m-%d') "statusDate",A.ACTU_PREMIUM "actuPremium"
+	    FROM T_TRADE_STATUS_INFO A,T_PD_PRODUCT B,T_TRADE_INFO C
+	    WHERE A.PRODUCT_ID = B.PRODUCT_ID
+	    AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+	    AND A.TRADE_INFO_ID = #{tradeInfoId}
+	    AND A.RC_STATE = 'E'
+	    AND B.RC_STATE = 'E'
+	    AND C.RC_STATE = 'E'
+    </select>
+      <!-- 根据产品编码和客户姓名查询交易号 -->
+    <select id="getTradeStatusInfoId" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT
+				e.TRADE_STATUS_INFO_ID "tradeStatusInfoId"
+			FROM
+				t_cust_base_info a,
+				t_pd_product b,
+				t_trade_info c,
+				t_trade_cust_info d,
+				t_trade_status_info e,
+				t_trade_product_info_view v
+			WHERE
+				a.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND b.PRODUCT_ID = v.PRODUCT_ID
+				AND c.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND c.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND c.TRADE_INFO_ID = e.TRADE_INFO_ID
+				<!-- 排除全部赎回的交易 -->
+				AND (SELECT x.SUBSCRIPTION_COPIES from t_trade_status_info x WHERE 1=1 
+							AND x.TRADE_INFO_ID = c.TRADE_INFO_ID AND x.RC_STATE = "E")-FUNC_GET_ALL_REDEMPTION_SHARE(c.TRADE_INFO_ID) > 0
+				AND a.RC_STATE = "E"
+				AND b.RC_STATE = "E"
+				AND c.RC_STATE = "E"
+				AND d.RC_STATE = "E"
+				AND e.RC_STATE = "E"
+				AND a.CHN_NAME = #{custName}
+				AND b.PRODUCT_CODE = #{productCode}	
+    </select>
+       <!-- 根据产品编码和客户姓名查询总份额 -->
+    <select id="getSubscriptionCopies" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT
+				SUM(e.SUBSCRIPTION_COPIES) "subscriptionCopies"
+			FROM
+				t_cust_base_info a,
+				t_pd_product b,
+				t_trade_info c,
+				t_trade_cust_info d,
+				t_trade_status_info e,
+				t_trade_product_info_view v
+			WHERE
+				a.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND b.PRODUCT_ID = v.PRODUCT_ID
+				AND c.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND c.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND c.TRADE_INFO_ID = e.TRADE_INFO_ID
+				AND a.RC_STATE = "E"
+				AND b.RC_STATE = "E"
+				AND c.RC_STATE = "E"
+				AND d.RC_STATE = "E"
+				AND e.RC_STATE = "E"
+				AND a.CHN_NAME = #{custName}
+				AND b.PRODUCT_CODE = #{productCode}	
+    </select>
+    
+      <!-- 查询当日成立产品 -->
+    <select id="getFoundProductList" parameterType="java.util.Map" resultType="java.util.Map">
+    SELECT
+		MIN(b.CREATE_DATE) "minCreateDate" , c.PRODUCT_NAME "productName" ,c.PRODUCT_ID "productId"
+		FROM t_trade_info a, t_trade_status_info b ,t_pd_product c, t_trade_product_info_view v
+		WHERE 1=1 AND a.TRADE_INFO_ID = b.TRADE_INFO_ID 
+		AND a.TRADE_INFO_ID = v.TRADE_INFO_ID AND c.PRODUCT_ID = v.PRODUCT_ID
+		AND a.RC_STATE = 'E' AND b.RC_STATE = 'E' AND c.RC_STATE = 'E'
+		AND b.TRADE_STATUS = '10'
+		AND DATE_FORMAT(b.CREATE_DATE,'%Y-%m-%d') = CURDATE()
+		GROUP BY c.PRODUCT_ID
+    </select>
+</mapper>

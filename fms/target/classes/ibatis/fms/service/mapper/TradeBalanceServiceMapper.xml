@@ -1,0 +1,573 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.TradeBalanceServiceMapper" >
+	<sql id="queryBalanceTradeInfoListCondition">
+		<if test="productId!=null and productId!=''">
+		   	AND C.PRODUCT_ID = #{productId}
+		</if>
+		<if test="comId!=null and comId!=''">
+		   	AND A.COMPANY_ID = #{comId}
+		</if>
+		<if test="agentId!=null and agentId!=''">
+		   	AND A.AGENT_ID = #{agentId}
+		</if>
+		<!-- <if test="storeId!=null and storeId!=''">
+		   	AND A.STORE_ID = CAST(#{storeId} AS SIGNED) 
+		</if> -->
+		<if test="tradeNo!=null and tradeNo!=''">
+		   	AND A.TRADE_NO = #{tradeNo}
+		</if>
+		<if test="productType!=null and productType!=''">
+		   	AND PRODUCT_TYPE = #{productType}
+		</if>
+		<if test="productSubType!=null and productSubType!=''">
+		   	AND PRODUCT_SUB_TYPE = #{productSubType}
+		</if>
+		<!-- F C.PRODUCT_ID?-->
+		<if test="agencyComId!=null and agencyComId!=''">
+		   	AND EXISTS(SELECT 'X' FROM T_AGENCY_COM E,T_PD_PRODUCT F 
+				                  WHERE E.AGENCY_COM_ID = F.AGENCY_COM_ID 
+				                  AND F.PRODUCT_ID = C.PRODUCT_ID    
+				                  AND E.AGENCY_COM_ID = #{agencyComId}
+				                  AND E.RC_STATE = 'E'
+				                  AND F.RC_STATE = 'E')
+		</if>
+		<!--F A.AGENT_ID? -->
+		<if test="departmentId!=null and departmentId!=''">
+		   	AND EXISTS(SELECT 'X' FROM T_DEF_DEPARTMENT G,T_AGENT H 
+				                  WHERE G.DEPARTMENT_ID = H.DEPARTMENT_ID 
+				                  AND H.AGENT_ID = A.AGENT_ID
+				                  AND G.DEPARTMENT_ID = #{departmentId})
+		</if>
+	</sql>
+	
+	<!--F PRODUCT.PRODUCT_ID? -->
+	<sql id="queryBalanceTradeInfoListCondition1">
+		<if test='productSubType!=null and productSubType=="02" and startDate!=null and startDate!=""'>
+			AND EXISTS(SELECT 'X' FROM T_PD_WEALTH WHERE PRODUCT_ID = PRODUCT.PRODUCT_ID    
+				AND RC_STATE='E' AND FOUND_DATE<![CDATA[>=]]>STR_TO_DATE('${startDate}','%Y-%m-%d'))
+		</if>
+		<if test='productSubType!=null and productSubType!="02" and startDate!=null and startDate!=""'>
+			AND C.expectOpenDay  <![CDATA[>=]]> #{startDate}
+		</if> 
+		<if test='productSubType!=null and productSubType=="02" and endDate!=null and endDate!=""'>
+		    AND EXISTS(SELECT 'X' FROM T_PD_WEALTH WHERE PRODUCT_ID = PRODUCT.PRODUCT_ID 
+		   		AND RC_STATE='E' AND FOUND_DATE<![CDATA[<=]]>STR_TO_DATE('${endDate}','%Y-%m-%d'))
+		</if>
+		<if test='productSubType!=null and productSubType!="02" and endDate!=null and endDate!=""'>
+		    AND C.expectOpenDay  <![CDATA[<=]]> #{endDate}
+		</if>
+	</sql>
+
+	<!-- S -->
+	<select id="queryBalanceTradeInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+	
+	select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+		SELECT (SELECT @rownum := 0),
+		     A.COMPANY_ID "comId",
+       		(SELECT COM_NAME FROM T_DEF_COM WHERE COM_ID = A.COMPANY_ID AND RC_STATE = 'E')"comName",
+       		<!--  A.STORE_ID "storeId",
+       		(SELECT STORE_NAME FROM T_DEF_STORE WHERE STORE_ID = A.STORE_ID AND RC_STATE = 'E')"storeName", -->
+	        (SELECT DEPARTMENT.DEPARTMENT_NAME FROM T_DEF_DEPARTMENT DEPARTMENT,T_AGENT AGT 
+	               WHERE DEPARTMENT.DEPARTMENT_ID = AGT.DEPARTMENT_ID
+	               AND AGT.AGENT_ID = A.AGENT_ID
+	               AND DEPARTMENT.RC_STATE = 'E'
+	               AND AGT.RC_STATE = 'E')"departmentName",
+      		A.AGENT_ID "agentId",
+      		(SELECT AGT.AGENT_NAME FROM T_AGENT AGT WHERE AGT.AGENT_ID = A.AGENT_ID AND AGT.RC_STATE = 'E')"agentName" ,
+		    (SELECT E.AGENCY_NAME FROM T_AGENCY_COM E,T_PD_PRODUCT F 
+		                  WHERE E.AGENCY_COM_ID = F.AGENCY_COM_ID 
+		                  AND F.PRODUCT_ID = C.PRODUCT_ID 
+		                  AND E.RC_STATE = 'E'
+		                  AND F.RC_STATE = 'E' )"agencyComName",
+      		C.PRODUCT_ID "productId",
+      		(SELECT PRODUCT_NAME FROM T_PD_PRODUCT WHERE PRODUCT_ID = C.PRODUCT_ID AND RC_STATE = 'E')"productName",
+      		A.TRADE_NO "tradeNo",
+      		(SELECT SUM(ACTU_PREMIUM) FROM T_TRADE_STATUS_INFO WHERE TRADE_INFO_ID = B.TRADE_INFO_ID
+          	AND TRADE_STAUS = '06' AND RC_STATE = 'E') "feeTotal"
+			FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT
+			WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+				AND A.TRADE_STAUS = B.TRADE_STATUS 
+				AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+				AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+				AND A.TRADE_STAUS = '06'
+				AND A.TRADE_TYPE = '2'
+				AND A.RC_STATE = 'E'
+				AND B.RC_STATE = 'E'
+				AND PRODUCT.RC_STATE = 'E'
+				AND EXISTS(SELECT 'X' FROM T_PD_RISK RISK WHERE RISK.PRODUCT_ID = PRODUCT.PRODUCT_ID 
+								AND RISK.PR_FLAG = 'M' AND RISK.RC_STATE = 'E')
+				<if test="startDate!=null and startDate!=''">
+					AND B.STATUS_DATE  <![CDATA[>=]]> STR_TO_DATE('${startDate}','%Y-%m-%d')
+				</if>
+				<if test="endDate!=null and endDate!=''">
+				   	AND B.STATUS_DATE <![CDATA[<=]]> STR_TO_DATE('${endDate}','%Y-%m-%d')
+				</if>
+				<include refid="queryBalanceTradeInfoListCondition"/>
+					
+		UNION
+		SELECT (SELECT @rownum := 0),
+		    A.COMPANY_ID "comId",
+       		(SELECT COM_NAME FROM T_DEF_COM WHERE COM_ID = A.COMPANY_ID AND RC_STATE = 'E')"comName",
+       		A.STORE_ID "storeId",
+       		(SELECT STORE_NAME FROM T_DEF_STORE WHERE STORE_ID = A.STORE_ID AND RC_STATE = 'E')"storeName",
+       		(SELECT DEPARTMENT.DEPARTMENT_NAME FROM T_DEF_DEPARTMENT DEPARTMENT,T_AGENT AGT 
+               		WHERE DEPARTMENT.DEPARTMENT_ID = AGT.DEPARTMENT_ID
+               		AND AGT.AGENT_ID = A.AGENT_ID
+               		AND DEPARTMENT.RC_STATE = 'E'
+               		AND AGT.RC_STATE = 'E')"departmentName",
+      		A.AGENT_ID "agentId",
+      		(SELECT AGT.AGENT_NAME FROM T_AGENT AGT WHERE AGT.AGENT_ID = A.AGENT_ID AND AGT.RC_STATE = 'E')"agentName" ,
+      		(SELECT E.AGENCY_NAME FROM T_AGENCY_COM E,T_PD_PRODUCT F 
+                  WHERE E.AGENCY_COM_ID = F.AGENCY_COM_ID 
+                  AND F.PRODUCT_ID = C.PRODUCT_ID 
+                  AND E.RC_STATE = 'E'
+                  AND F.RC_STATE = 'E' )"agencyComName",
+      		C.PRODUCT_ID "productId",
+      		(SELECT PRODUCT_NAME FROM T_PD_PRODUCT WHERE PRODUCT_ID = C.PRODUCT_ID AND RC_STATE = 'E')"productName",
+      		A.TRADE_NO "tradeNo",B.ACTU_SUBSCRIPTION_AMOUNT "feeTotal"
+			FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT
+			WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+				AND A.TRADE_STAUS = B.TRADE_STATUS 
+				AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+				AND A.TRADE_STAUS = '10'
+				AND A.TRADE_TYPE = '1'
+				AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+				AND A.RC_STATE = 'E'
+				AND B.RC_STATE = 'E'
+				AND PRODUCT.RC_STATE = 'E'
+				<include refid="queryBalanceTradeInfoListCondition"/>
+				<include refid="queryBalanceTradeInfoListCondition1"/>
+				) nAlias
+		) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+ 	</select>
+
+	<!-- S -->
+	<select id="queryBalanceTradeInfoListCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+		SELECT SUM(COUNT_) FROM (
+			SELECT COUNT(1) "COUNT_"
+				FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT
+				WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+					AND A.TRADE_STAUS = B.TRADE_STATUS 
+					AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+					AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+					AND A.TRADE_STAUS = '06'
+					AND A.TRADE_TYPE = '2'
+					AND A.RC_STATE = 'E'
+					AND B.RC_STATE = 'E'
+					AND PRODUCT.RC_STATE = 'E'
+					AND EXISTS(SELECT 'X' FROM T_PD_RISK RISK WHERE RISK.PRODUCT_ID = PRODUCT.PRODUCT_ID 
+								AND RISK.PR_FLAG = 'M' AND RISK.RC_STATE = 'E')
+					<if test="startDate!=null and startDate!=''">
+						AND B.STATUS_DATE  <![CDATA[>=]]> STR_TO_DATE('${startDate}','%Y-%m-%d')
+					</if>
+					<if test="endDate!=null and endDate!=''">
+					   	AND B.STATUS_DATE <![CDATA[<=]]> STR_TO_DATE('${endDate}','%Y-%m-%d')
+					</if>
+					<include refid="queryBalanceTradeInfoListCondition"/>
+						
+			UNION ALL
+			SELECT COUNT(1) "COUNT_"
+				FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT
+				WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+					AND A.TRADE_STAUS = B.TRADE_STATUS 
+					AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+					AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+					AND A.TRADE_STAUS = '10'
+					AND A.TRADE_TYPE = '1'
+					AND A.RC_STATE = 'E'
+					AND B.RC_STATE = 'E'
+					AND PRODUCT.RC_STATE = 'E'
+					<include refid="queryBalanceTradeInfoListCondition"/>
+					<include refid="queryBalanceTradeInfoListCondition1"/>)XXX
+ 	</select>
+
+	<sql id="getTradeBalanceRiskInfoListCondition">
+		<if test="startDate!=null and startDate!=''">
+		   	and b.status_date <![CDATA[>=]]> date'${startDate}'
+		</if>
+		<if test="endDate!=null and endDate!=''">
+		   	and  b.status_date <![CDATA[<=]]> date'${endDate}'
+		</if>
+		<if test="productId!=null and productId!=''">
+		   	and PD_VIEW.PRODUCT_ID = #{productId}
+		</if>
+	</sql>
+	
+	<!-- S -->
+ 	<select id="getTradeBalanceRiskInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+		<!-- SELECT A.TRADE_INFO_ID "tradeInfoId",A.TRADE_TYPE "tradeType",B.ACTU_PREMIUM "actuPremium",
+		       (SELECT C.PD_RISK_ID FROM T_PD_RISK C 
+		               WHERE C.PRODUCT_ID = PD_VIEW.PRODUCT_ID
+		                     AND C.RC_STATE = 'E') "pdRiskId",
+		       PKG_COMMON.FUNC_CALL_POLICY_YEAR(B.TRADE_INFO_ID,DATE_FORMAT(B.STATUS_DATE,'%Y-%m-%d')) "policyYear",
+		       PD_VIEW.payPeriod "payPeriod",PD_VIEW.payPeriodUnit "payPeriodUnit",B.STATUS_DATE "calDate"
+		FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW PD_VIEW
+		WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+			AND A.TRADE_INFO_ID = PD_VIEW.TRADE_INFO_ID
+			AND A.TRADE_TYPE = '2'
+			AND A.TRADE_STAUS IN('06','07')
+			<include refid="getTradeBalanceRiskInfoListCondition"/>
+			AND A.RC_STATE = 'E'
+			AND B.RC_STATE = 'E' -->
+		
+SELECT A.COMPANY_ID "comId",
+           (SELECT COM_NAME FROM T_DEF_COM WHERE COM_ID = A.COMPANY_ID AND RC_STATE = 'E')"comName",
+            <!-- A.STORE_ID "storeId",
+           (SELECT STORE_NAME FROM T_DEF_STORE WHERE STORE_ID = A.STORE_ID AND RC_STATE = 'E')"storeName", -->
+           (SELECT DEPARTMENT.DEPARTMENT_NAME FROM T_DEF_DEPARTMENT DEPARTMENT,T_AGENT AGT 
+                 WHERE DEPARTMENT.DEPARTMENT_ID = AGT.DEPARTMENT_ID
+                 AND AGT.AGENT_ID = A.AGENT_ID
+                 AND DEPARTMENT.RC_STATE = 'E'
+                 AND AGT.RC_STATE = 'E')"departmentName",
+            A.AGENT_ID "agentId",
+            (SELECT AGT.AGENT_NAME FROM T_AGENT AGT WHERE AGT.AGENT_ID = A.AGENT_ID AND AGT.RC_STATE = 'E')"agentName" ,
+        	(SELECT E.AGENCY_NAME FROM T_AGENCY_COM E,T_PD_PRODUCT F 
+                      WHERE E.AGENCY_COM_ID = F.AGENCY_COM_ID 
+                      AND F.PRODUCT_ID = C.PRODUCT_ID 
+                      AND E.RC_STATE = 'E'
+                      AND F.RC_STATE = 'E' )"agencyComName",
+          	C.PRODUCT_ID "productId",
+          	(SELECT PRODUCT_NAME FROM T_PD_PRODUCT WHERE PRODUCT_ID = C.PRODUCT_ID AND RC_STATE = 'E')"productName",
+          	A.TRADE_NO "tradeNo",
+			(SELECT SUM(ACTU_PREMIUM) FROM T_TRADE_STATUS_INFO WHERE TRADE_INFO_ID = B.TRADE_INFO_ID
+          		AND TRADE_STAUS = '06' AND RC_STATE = 'E') "feeTotal",
+          	(SELECT PDRISK.PD_RISK_ID FROM T_PD_RISK PDRISK 
+		               WHERE PDRISK.PRODUCT_ID = C.PRODUCT_ID
+		                     AND PDRISK.RC_STATE = 'E') "pdRiskId",
+          	A.TRADE_INFO_ID "tradeInfoId",A.TRADE_TYPE "tradeType",B.ACTU_PREMIUM "actuPremium",
+          	FUNC_CALL_POLICY_YEAR(B.TRADE_INFO_ID,DATE_FORMAT(B.STATUS_DATE,'%Y-%m-%d')) "policyYear",
+		    C.payPeriod "payPeriod",C.payPeriodUnit "payPeriodUnit",
+		    C.payPeriod||FUNC_GET_CODE_NAME('payPeriodUnit',C.payPeriodUnit) "payPeriodName",
+        	DATE_FORMAT(A.TRADE_DATE,'%Y-%m-%d') "tradeDate",DATE_FORMAT(B.STATUS_DATE,'%Y-%m-%d')"validDate",
+        	a.trade_info_no "tradeInfoNo",
+        	(select e.CHN_NAME from T_TRADE_CUST_ROLE_INFO d,
+                               T_CUST_BASE_INFO       e,
+                               t_trade_cust_info      f
+                         where f.TRADE_INFO_ID = a.TRADE_INFO_ID
+                           and f.CUST_BASE_INFO_ID = e.CUST_BASE_INFO_ID
+                           and d.trade_cust_info_id = f.trade_cust_info_id
+                           and d.role_type = '1'
+                           and d.rc_state = 'E'
+                           and e.rc_state = 'E'
+                           AND f.rc_state = 'E'
+                           and @rownum :=@rownum+1)"customerName",
+        	(SELECT FUNC_GET_CODE_NAME('positionCode',d.POSITION_CODE) 
+                FROM T_AGENT_POSITION_TRACE d 
+                WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE = 'E'  
+      					      AND d.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE e 
+      						        WHERE e.AGENT_ID = d.AGENT_ID AND e.RC_STATE='E') AND @ROWNUM :=@rownum+1)"positionName",
+        	(SELECT FUNC_GET_CODE_NAME('gradeCode',d.GRADE_CODE) 
+                FROM T_AGENT_POSITION_TRACE d 
+                WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE = 'E'  
+      					      AND d.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE e 
+      						    WHERE e.AGENT_ID = d.AGENT_ID AND e.RC_STATE='E') AND @ROWNUM :=@rownum+1) "gradeName",
+		    DATE_FORMAT(B.STATUS_DATE,'%Y-%m-%d') "calDate"               
+	    FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT
+	    WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	        AND A.TRADE_STAUS = B.TRADE_STATUS 
+	        AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+	        AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+	        AND A.TRADE_STAUS = '06'
+	        AND A.TRADE_TYPE = '2'
+	        AND A.RC_STATE = 'E'
+	        AND B.RC_STATE = 'E'
+	        AND PRODUCT.RC_STATE = 'E'
+	        AND EXISTS(SELECT 'X' FROM T_PD_RISK RISK WHERE RISK.PRODUCT_ID = PRODUCT.PRODUCT_ID 
+								AND RISK.PR_FLAG = 'M' AND RISK.RC_STATE = 'E')
+	        <if test="startDate!=null and startDate!=''">
+				AND B.STATUS_DATE <![CDATA[>=]]> STR_TO_DATE('${startDate}','%Y-%m-%d')
+			</if>
+			<if test="endDate!=null and endDate!=''">
+			   	AND B.STATUS_DATE  <![CDATA[<=]]> STR_TO_DATE('${endDate}','%Y-%m-%d')
+			</if>
+	        <include refid="queryBalanceTradeInfoListCondition"/>    
+ 	</select>
+ 	
+ 	<sql id="getTradeBalanceWealthInfoListCondition">
+		<if test="startDate!=null and startDate!=''">
+		   	and D.FOUND_DATE <![CDATA[>=]]> date'${startDate}'
+		</if>
+		<if test="endDate!=null and endDate!=''">
+		   	and D.FOUND_DATE <![CDATA[<=]]> date'${endDate}'
+		</if>
+		<if test="productId!=null and productId!=''">
+		   	and C.PRODUCT_ID = #{productId}
+		</if>
+	</sql>
+ 	<!-- s -->
+ 	<select id="getTradeBalanceWealthInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+		<!-- SELECT A.TRADE_INFO_ID "tradeInfoId",A.TRADE_TYPE "tradeType",B.ACTU_SUBSCRIPTION_AMOUNT "actuSubscriptionAmount",
+	      B.SUBSCRIPTION_COPIES "subscriptionCopies",C.PRODUCT_ID "productId",C.PRODUCT_TYPE "productType",
+	      C.PRODUCT_SUB_TYPE "productSubType",D.CLOSE_DPERIOD "closeDperiod",D.CLOSE_DPERIOD_UNIT "closeDperiodUnit",
+	      D.PD_WEALTH_ID "pdWealthId",D.FOUND_DATE "foundDate",PD_VIEW.expectOpenDay "expectOpenDay",
+	      E.SUBSCRIPTION_FEE_RATIO "subscriptionFeeRatio",E.FIX_MANAGEMENT_FEE_RATIO "fixManagementFeeRatio",
+	      E.FLOAT_MANAGEMENT_FEE_RATIO "floatManagementRatio",
+	      E.TAX_FEE "taxFeeRate",E.CHANNEL_FEE "channelFeeRate"
+	      FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW PD_VIEW,
+	        T_PD_PRODUCT C,T_PD_WEALTH D,T_PD_WEALTH_CHARGE_RATE E
+	      WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+	        AND A.TRADE_INFO_ID = PD_VIEW.TRADE_INFO_ID
+	        AND PD_VIEW.PRODUCT_ID = C.PRODUCT_ID
+	        AND C.PRODUCT_ID = D.PRODUCT_ID
+	        AND D.PD_WEALTH_ID = E.PD_WEALTH_ID
+	        AND A.TRADE_TYPE = '1'
+	        AND A.TRADE_STAUS IN('09')
+	      <include refid="getTradeBalanceWealthInfoListCondition"/>
+	      AND A.RC_STATE = 'E'
+	      AND B.RC_STATE = 'E'
+	      AND C.RC_STATE = 'E'
+	      AND D.RC_STATE = 'E' -->
+	      SELECT * FROM (
+	      SELECT 
+	      		(SELECT MAX(IFNULL(FEE_RATE.FEE_RATE,0)) FROM T_PD_WEALTH_FEE_RATE FEE_RATE 
+                    WHERE FEE_RATE.PD_WEALTH_ID = FIX_PD_TRADE_INFO.pdWealthId 
+                    AND IFNULL(FEE_RATE.SUBSCRIPTION_FEE_LOWER,0)<![CDATA[<=]]> FIX_PD_TRADE_INFO.actuSubscriptionAmount
+                    AND IFNULL(FEE_RATE.SUBSCRIPTION_FEE_UPPER,10000000000)<![CDATA[>]]>FIX_PD_TRADE_INFO.actuSubscriptionAmount
+                    AND FEE_RATE.FEE_TYPE = '01' 
+                    AND FEE_RATE.RC_STATE = 'E'
+                    AND (FEE_RATE.CLOSE_DPERIOD IS NULL 
+                        OR FEE_RATE.CLOSE_DPERIOD = FIX_PD_TRADE_INFO.closeDperiod))"consultationServiceFeeRate",
+	      		FIX_PD_TRADE_INFO.* FROM 
+			   (SELECT A.COMPANY_ID "comId",
+		           (SELECT COM_NAME FROM T_DEF_COM WHERE COM_ID = A.COMPANY_ID AND RC_STATE = 'E')"comName",
+		          <!--   A.STORE_ID "storeId",
+		           (SELECT STORE_NAME FROM T_DEF_STORE WHERE STORE_ID = A.STORE_ID AND RC_STATE = 'E')"storeName", -->
+		           (SELECT DEPARTMENT.DEPARTMENT_NAME FROM T_DEF_DEPARTMENT DEPARTMENT,T_AGENT AGT 
+		                   WHERE DEPARTMENT.DEPARTMENT_ID = AGT.DEPARTMENT_ID
+		                   AND AGT.AGENT_ID = A.AGENT_ID
+		                   AND DEPARTMENT.RC_STATE = 'E'
+		                   AND AGT.RC_STATE = 'E')"departmentName",
+		           A.AGENT_ID "agentId",
+		           (SELECT AGT.AGENT_NAME FROM T_AGENT AGT WHERE AGT.AGENT_ID = A.AGENT_ID AND AGT.RC_STATE = 'E')"agentName" ,
+		           (SELECT E.AGENCY_NAME FROM T_AGENCY_COM E,T_PD_PRODUCT F 
+		                  WHERE E.AGENCY_COM_ID = F.AGENCY_COM_ID 
+		                  AND F.PRODUCT_ID = C.PRODUCT_ID 
+		                  AND E.RC_STATE = 'E'
+		                  AND F.RC_STATE = 'E' )"agencyComName",
+		            C.PRODUCT_ID "productId",
+		            (SELECT PRODUCT_NAME FROM T_PD_PRODUCT WHERE PRODUCT_ID = C.PRODUCT_ID AND RC_STATE = 'E')"productName",
+		            A.TRADE_NO "tradeNo",B.ACTU_SUBSCRIPTION_AMOUNT "feeTotal",
+		            A.TRADE_INFO_ID "tradeInfoId",A.TRADE_TYPE "tradeType",
+		            DATE_FORMAT(A.TRADE_DATE,'%Y-%m-%d') "tradeDate",a.trade_info_no "tradeInfoNo",
+		            (select d.CHN_NAME from t_trade_cust_info e,
+		                               T_CUST_BASE_INFO  d
+		                         where e.TRADE_INFO_ID = a.TRADE_INFO_ID
+		                           and e.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+		                           and e.rc_state = 'E'
+		                           and d.rc_state = 'E')"customerName",
+		            (SELECT FUNC_GET_CODE_NAME('positionCode',d.POSITION_CODE) 
+		                FROM T_AGENT_POSITION_TRACE d 
+		                WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE = 'E'  
+		      					      AND d.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE e 
+		      						        WHERE e.AGENT_ID = d.AGENT_ID AND e.RC_STATE='E') AND @ROWNUM :=@rownum+1)"positionName",
+		            (SELECT FUNC_GET_CODE_NAME('gradeCode',d.GRADE_CODE) 
+		                FROM T_AGENT_POSITION_TRACE d 
+		                WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE = 'E'  
+		      					      AND d.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE e 
+		      						    WHERE e.AGENT_ID = d.AGENT_ID AND e.RC_STATE='E') AND @ROWNUM :=@rownum+1) "gradeName",
+		            B.ACTU_SUBSCRIPTION_AMOUNT "actuSubscriptionAmount",
+			        B.SUBSCRIPTION_COPIES "subscriptionCopies",PRODUCT.PRODUCT_TYPE "productType",
+			        PRODUCT.PRODUCT_SUB_TYPE "productSubType",
+			        (CASE WHEN C.CLOSEDPERIODS IS NOT NULL THEN C.CLOSEDPERIODS ELSE PDWEALTH.CLOSE_DPERIODS END)"closeDperiod",
+		            PDWEALTH.CLOSE_DPERIOD_UNIT "closeDperiodUnit",
+			        PDWEALTH.PD_WEALTH_ID "pdWealthId",DATE_FORMAT(PDWEALTH.FOUND_DATE,'%Y-%m-%d') "foundDate",C.expectOpenDay "expectOpenDay",
+			        IFNULL(C.reductionRadio,0) "reductionRadio",
+			        <!-- (SELECT MAX(IFNULL(FEE_RATE.FEE_RATE,0)) FROM T_PD_WEALTH_FEE_RATE FEE_RATE 
+		                WHERE FEE_RATE.PD_WEALTH_ID = PDWEALTH.PD_WEALTH_ID 
+		                AND IFNULL(FEE_RATE.SUBSCRIPTION_FEE_LOWER,0)<![CDATA[<=]]>B.ACTU_SUBSCRIPTION_AMOUNT
+		                AND IFNULL(FEE_RATE.SUBSCRIPTION_FEE_UPPER,10000000000)>B.ACTU_SUBSCRIPTION_AMOUNT
+		                AND FEE_RATE.FEE_TYPE = '01' 
+		                AND FEE_RATE.RC_STATE = 'E')"consultationServiceFeeRate", -->
+			        IFNULL(PDWEALTHRATE.SUBSCRIPTION_FEE_RATIO,0) "subscriptionFeeRatio",PDWEALTHRATE.FIX_MANAGEMENT_FEE_RATIO "fixManagementFeeRatio",
+			        PDWEALTHRATE.FLOAT_MANAGEMENT_FEE_RATIO "floatManagementRatio",
+			        PDWEALTHRATE.TAX_FEE "taxFeeRate",PDWEALTHRATE.CHANNEL_FEE "channelFeeRate"
+		       FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT,
+		            T_PD_WEALTH PDWEALTH,T_PD_WEALTH_CHARGE_RATE PDWEALTHRATE
+		       WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+		        	AND A.TRADE_STAUS = B.TRADE_STATUS 
+		        	AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+		        	AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+		        	AND PRODUCT.PRODUCT_ID = PDWEALTH.PRODUCT_ID
+		        	AND PDWEALTH.PD_WEALTH_ID = PDWEALTHRATE.PD_WEALTH_ID
+		        	AND A.TRADE_STAUS = '10'
+		        	AND A.TRADE_TYPE = '1'
+		        	AND A.RC_STATE = 'E'
+		        	AND B.RC_STATE = 'E'
+		        	AND PRODUCT.RC_STATE = 'E'
+		        	AND PDWEALTH.RC_STATE = 'E'
+		        	AND PDWEALTHRATE.RC_STATE = 'E'
+		        	<include refid="queryBalanceTradeInfoListCondition"/>
+		        	<include refid="queryBalanceTradeInfoListCondition1"/>
+		        	)FIX_PD_TRADE_INFO)ALL_FIX_TRADE_INFO
+		      
+		WHERE 1=1 
+		<if test='productType!=null and productType=="1" and productSubType!=null and productSubType=="02"'>
+			and "consultationServiceFeeRate" >0
+		</if>
+		<if test='productType!=null and productType=="1" and productSubType!=null and productSubType!="02"'>
+			and "subscriptionFeeRatio" >0
+		</if>
+		ORDER BY "productId"
+ 	</select>
+ 	
+ 	
+ 	<!-- S -->
+ 	<select id="getTradeBalanceWealthNotFixedInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+	    SELECT A.COMPANY_ID "comId",
+           (SELECT COM_NAME FROM T_DEF_COM WHERE COM_ID = A.COMPANY_ID AND RC_STATE = 'E')"comName",
+          <!--   A.STORE_ID "storeId",
+           (SELECT STORE_NAME FROM T_DEF_STORE WHERE STORE_ID = A.STORE_ID AND RC_STATE = 'E')"storeName", -->
+           (SELECT DEPARTMENT.DEPARTMENT_NAME FROM T_DEF_DEPARTMENT DEPARTMENT,T_AGENT AGT 
+                   WHERE DEPARTMENT.DEPARTMENT_ID = AGT.DEPARTMENT_ID
+                   AND AGT.AGENT_ID = A.AGENT_ID
+                   AND DEPARTMENT.RC_STATE = 'E'
+                   AND AGT.RC_STATE = 'E')"departmentName",
+           A.AGENT_ID "agentId",
+           (SELECT AGT.AGENT_NAME FROM T_AGENT AGT WHERE AGT.AGENT_ID = A.AGENT_ID AND AGT.RC_STATE = 'E')"agentName" ,
+           (SELECT E.AGENCY_NAME FROM T_AGENCY_COM E,T_PD_PRODUCT F 
+                  WHERE E.AGENCY_COM_ID = F.AGENCY_COM_ID 
+                  AND F.PRODUCT_ID = C.PRODUCT_ID 
+                  AND E.RC_STATE = 'E'
+                  AND F.RC_STATE = 'E' )"agencyComName",
+            C.PRODUCT_ID "productId",
+            (SELECT PRODUCT_NAME FROM T_PD_PRODUCT WHERE PRODUCT_ID = C.PRODUCT_ID AND RC_STATE = 'E')"productName",
+            A.TRADE_NO "tradeNo",B.ACTU_SUBSCRIPTION_AMOUNT "feeTotal",
+            A.TRADE_INFO_ID "tradeInfoId",A.TRADE_TYPE "tradeType",
+            DATE_FORMAT(A.TRADE_DATE,'%Y-%m-%d') "tradeDate",
+            a.trade_info_no "tradeInfoNo",
+            a.trade_info_id "tradeInfoId",
+            (select d.CHN_NAME from t_trade_cust_info e,
+                               T_CUST_BASE_INFO  d
+                         where e.TRADE_INFO_ID = a.TRADE_INFO_ID
+                           and e.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+                           and e.rc_state = 'E'
+                           and d.rc_state = 'E')"customerName",
+            (SELECT FUNC_GET_CODE_NAME('positionCode',d.POSITION_CODE) 
+                FROM T_AGENT_POSITION_TRACE d 
+                WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE = 'E'  
+      					      AND d.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE e 
+      						        WHERE e.AGENT_ID = d.AGENT_ID AND e.RC_STATE='E') AND @ROWNUM :=@rownum+1)"positionName",
+            (SELECT FUNC_GET_CODE_NAME('gradeCode',d.GRADE_CODE) 
+                FROM T_AGENT_POSITION_TRACE d 
+                WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE = 'E'  
+      					      AND d.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE e 
+      						    WHERE e.AGENT_ID = d.AGENT_ID AND e.RC_STATE='E') AND @ROWNUM :=@rownum+1) "gradeName",
+            B.ACTU_SUBSCRIPTION_AMOUNT "actuSubscriptionAmount",
+	        B.SUBSCRIPTION_COPIES "subscriptionCopies",PRODUCT.PRODUCT_TYPE "productType",
+	        PRODUCT.PRODUCT_SUB_TYPE "productSubType",PDWEALTH.CLOSE_DPERIOD "closeDperiod",
+            PDWEALTH.CLOSE_DPERIOD_UNIT "closeDperiodUnit",
+	        PDWEALTH.PD_WEALTH_ID "pdWealthId",DATE_FORMAT(PDWEALTH.FOUND_DATE,'%Y-%m-%d') "foundDate",C.expectOpenDay "expectOpenDay",
+	        IFNULL(C.reductionRadio,0) "reductionRadio",
+	        PDWEALTHRATE.SUBSCRIPTION_FEE_RATIO "subscriptionFeeRatio",PDWEALTHRATE.FIX_MANAGEMENT_FEE_RATIO "fixManagementFeeRatio",
+	        PDWEALTHRATE.FLOAT_MANAGEMENT_FEE_RATIO "floatManagementRatio",
+	        PDWEALTHRATE.TAX_FEE "taxFeeRate",PDWEALTHRATE.CHANNEL_FEE "channelFeeRate"
+       FROM T_TRADE_INFO A,T_TRADE_STATUS_INFO B,T_TRADE_PRODUCT_INFO_VIEW C,T_PD_PRODUCT PRODUCT,
+            T_PD_WEALTH PDWEALTH,T_PD_WEALTH_CHARGE_RATE PDWEALTHRATE
+       WHERE A.TRADE_INFO_ID = B.TRADE_INFO_ID
+        	AND A.TRADE_STAUS = B.TRADE_STATUS 
+        	AND A.TRADE_INFO_ID = C.TRADE_INFO_ID
+        	AND C.PRODUCT_ID = PRODUCT.PRODUCT_ID
+        	AND PRODUCT.PRODUCT_ID = PDWEALTH.PRODUCT_ID
+        	AND PDWEALTH.PD_WEALTH_ID = PDWEALTHRATE.PD_WEALTH_ID
+        	AND A.TRADE_STAUS = '10'
+        	AND A.TRADE_TYPE = '1'
+        	AND PRODUCT.PRODUCT_SUB_TYPE != '02'
+        	AND A.RC_STATE = 'E'
+        	AND B.RC_STATE = 'E'
+        	AND PRODUCT.RC_STATE = 'E'
+        	AND PDWEALTH.RC_STATE = 'E'
+        	AND PDWEALTHRATE.RC_STATE = 'E'
+        	<include refid="queryBalanceTradeInfoListCondition"/>
+        	<!-- <include refid="queryBalanceTradeInfoListCondition1"/> -->
+        	<if test='productSubType!=null and productSubType!="02" and endDate!=null and endDate!=""'>
+			    AND C.expectOpenDay  <![CDATA[<=]]> #{endDate}
+			</if>
+ 	</select>
+ 	<!--S  -->
+ 	<select id="getOpenDayNetValueList" resultType="java.util.Map" parameterType="java.util.Map">
+
+ 		SELECT DATE_FORMAT(B.FOUND_DATE,'%Y-%m-%d') "foundDate",
+	         DATE_FORMAT(D1.OPEN_DATE,'%Y-%m-%d') "openDate",
+	         C.NET_VALUE "netValue",
+            TRIM(DATE_FORMAT(f.subscription_copies -
+                    FUNC_GET_ALL_REDEMPTION_COPIES(D1.Open_Date,
+                                                              e.TRADE_INFO_ID),
+                    '99999999999990.0000')) "subscriptionCopies"
+           
+	      FROM T_PD_PRODUCT A,T_PD_WEALTH B,T_PD_WEALTH_NET_VALUE C,T_PD_WEALTH_OPEN_DATE D1,
+        t_trade_product_info_view E,
+        t_trade_status_info       F
+	      WHERE A.PRODUCT_ID = B.PRODUCT_ID
+	        AND D1.PD_WEALTH_ID = C.PD_WEALTH_ID
+	        AND D1.PD_WEALTH_ID = B.PD_WEALTH_ID
+	        AND D1.OPEN_DATE = C.PUBLIC_DATE
+          and e.TRADE_INFO_ID = f.trade_info_id
+	      	AND A.PRODUCT_ID =#{productId}
+          <if test="startDate!=null and startDate!=''">
+             	AND D1.OPEN_DATE <![CDATA[>=]]> DATE'${startDate}'
+        	</if>
+          <if test="endDate!=null and endDate!=''">
+             	AND D1.OPEN_DATE <![CDATA[<=]]> DATE'${endDate}'
+        	</if>
+			    AND D1.OPEN_DATE <![CDATA[>=]]> DATE'${expectOpenDay}'
+          		ANd e.TRADE_INFO_ID =#{tradeInfoId}
+			    AND A.RC_STATE = 'E'
+			    AND B.RC_STATE = 'E'
+			    AND C.RC_STATE = 'E'
+			    AND D1.RC_STATE ='E'
+          and f.rc_state='E'
+			ORDER BY D1.OPEN_DATE
+ 	</select>
+ 	
+ 	<!-- S -->
+ 	<select id="getNetValueList" resultType="java.util.Map" parameterType="java.util.Map">
+SELECT DATE_FORMAT(B.FOUND_DATE, '%Y-%m-%d') "foundDate",
+       DATE_FORMAT(C.PUBLIC_DATE, '%Y-%m-%d') "publicDate",
+       C.NET_VALUE "netValue",
+       TRIM(DATE_FORMAT(f.subscription_copies -
+                    FUNC_GET_ALL_REDEMPTION_COPIES(C.Public_Date,
+                                                              e.TRADE_INFO_ID),
+                    '99999999999990.0000')) "subscriptionCopies"
+  		FROM T_PD_PRODUCT              A,
+       	T_PD_WEALTH               B,
+       T_PD_WEALTH_NET_VALUE     C,
+       t_trade_product_info_view E,
+       t_trade_status_info       F
+       WHERE A.PRODUCT_ID = B.PRODUCT_ID
+       AND B.PD_WEALTH_ID = C.PD_WEALTH_ID
+       AND A.PRODUCT_ID = #{productId}
+	     <if test="startDate!=null and startDate!=''">
+       AND C.PUBLIC_DATE <![CDATA[>=]]> DATE'${startDate}'
+       </if>
+       <if test="endDate!=null and endDate!=''">
+       AND C.PUBLIC_DATE <![CDATA[<=]]> DATE'${endDate}'
+       </if>
+       AND C.PUBLIC_DATE <![CDATA[>=]]> DATE'${expectOpenDay}'
+       AND A.RC_STATE = 'E'
+       AND B.RC_STATE = 'E'
+       AND C.RC_STATE = 'E'
+       And f.rc_state = 'E'
+       ANd e.PRODUCT_ID = a.product_id
+       ANd e.TRADE_INFO_ID =#{tradeInfoId}
+       and e.TRADE_INFO_ID = f.trade_info_id
+       and f.rc_state = 'E'
+	 ORDER BY C.PUBLIC_DATE
+ 	</select>
+ 	
+ 	
+ 	<select id="getBeforeDateActuBalaDateAndNetValue" resultType="java.util.Map" parameterType="java.util.Map">
+		SELECT FUNC_GET_BEFORE_DATE_BALA_DATE(#{pdWealthId},#{publicDate}) "actuBalaDate",
+       		  FUNC_GET_BEFORE_DATE_NET_VALUE(#{pdWealthId},#{publicDate}) "actuNetValue"
+		FROM DUAL
+ 	</select>
+ 	
+ 	<select id="getAfterDateBalaNetValue" resultType="java.util.Map" parameterType="java.util.Map">
+		SELECT 
+       			FUNC_GET_AFTER_DATE_NET_VALUE(#{pdWealthId},#{publicDate}) "actuNetValue"
+		FROM DUAL
+ 	</select>
+ 	
+</mapper>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.sinosoft.core.service.mapper.CommonServiceMapper" >
+	<sql id="queryPermissionControl">
+		<!-- 以下是查询权限控制 3-本机构及下属机构数据，2-本机构数据，1-本人数据-->
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="3"'>
+   			AND A.OPER_COM_ID IN(
+   				SELECT C.COM_ID
+				FROM T_DEF_COM C 
+				WHERE C.RC_STATE = 'E'
+					AND C.STATE='01'
+					START WITH C.COM_ID = #{operComId} CONNECT BY PRIOR C.COM_ID = C.PARENT_COM_ID
+   			)
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="2" '>
+    		AND A.OPER_COM_ID = #{operComId} 
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="1" '>
+    		AND A.CREATE_USER_ID = #{createUserId} 
+    	</if>
+    	<!-- 权限控制结束 -->
+  	</sql>
+
+  	<select id="exeQuerySql" resultType="java.lang.String" parameterType="java.util.Map" >
+    	${sql}
+  	</select>
+  
+  	<select id="getSeqValByName" resultType="java.lang.String" parameterType="java.util.Map" >
+		<!-- select ${seqName}.nextval from dual -->
+		SELECT LAST_INSERT_ID() 
+	</select> 
+</mapper>

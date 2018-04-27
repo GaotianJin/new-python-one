@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xsi:schemaLocation="http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+       					   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd ">
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-extension-soap.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+
+	<!-- webservice服务端配置 -->
+	<!-- <jaxws:endpoint id="webserviceServer"
+		implementor="com.sinosoft.core.spring.cxf.CXFWebserviceServerImpl"
+		address="/eWealthServer" publish="true" /> -->
+	<bean id="cxfWebserviceServerImpl" class="com.sinosoft.core.spring.cxf.CXFWebserviceServerImpl"></bean>  
+  
+	<jaxws:endpoint id="webserviceServer" implementor="#cxfWebserviceServerImpl"   
+	  address="/eWealthServer" />
+	
+	<!-- webservice客户端配置 -->
+	<!-- <jaxws:client id="webserviceclient"
+		serviceClass="com.sinosoft.core.spring.cxf.CXFWebserviceServer"
+		address="http://localhost:8089/fms/services/eWealthServer" /> -->
+		
+
+
+</beans>
+

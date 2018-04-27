@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.BasicLawServiceMapper" >
+
+<!-- 基本法版本参数相关 -->	
+	<sql id="queryBasicLawVersionInfoSQL">
+	<!--s-->
+		select (SELECT @rownum := 0),
+		       basic_law_Id "basicLawId",
+		       version_code "versionCode",
+		       version_Name "versionName",
+		       b.code_name   "execState",
+		       date_format(exec_startdate,'%Y-%m-%d') "execStartDate",
+		       date_format(exec_enddate,'%Y-%m-%d')   "execEndDate"
+		from  t_basic_law a
+		left join t_def_code b
+		on a.exec_state=b.code
+		and b.code_type='lawExecState'
+		where a.rc_state='E'
+		<if test="versionCode!=null and versionCode!=''">
+		   	and version_code like '%${versionCode}%'
+		</if>
+		<if test="versionName!=null and versionName!=''">
+		   	and version_name like '%${versionName}%'
+		</if>
+		<if test="execState!=null and execState!=''">
+		   	and exec_state=#{execState}
+		</if>
+		<if test="execStartDate!=null and execStartDate!=''">
+		   	and exec_startdate >= date'${execStartDate}'
+		</if>
+		<if test="execStartToDate!=null and execStartToDate!=''">
+		    and date'${execStartToDate}' >= exec_startdate 
+		</if>
+		<if test="execEndDate!=null and execEndDate!=''">
+			and exec_enddate >= date'${execEndDate}'
+		</if>
+		<if test="execEndToDate!=null and execEndToDate!=''">
+		    and date'${execEndToDate}' >= exec_Enddate 
+		</if>
+	</sql>
+	
+	<!-- 基本法版本信息列表查询（总记录数） -->
+	<select id="queryBasicLawVersionInfoCounts" resultType="java.lang.Integer" parameterType="java.util.Map" >
+		select count(1) from 
+		(
+      	  	<include refid="queryBasicLawVersionInfoSQL"/>
+        )a
+	</select>
+	
+	<!--基本法版本信息列表查询（分页查询）-->
+	<select id="queryBasicLawVersionInfoPages" resultType="java.util.Map" parameterType="java.util.Map" >
+        select tAlias.* from
+		(    
+	         select nAlias.*, @rownum:=@rownum+1  r_rownum  from
+	         (
+		         <include refid="queryBasicLawVersionInfoSQL"/>
+		         
+			 ) nAlias
+		) tAlias where  r_rownum  >=#{queryStartIndex} and #{queryEndIndex} >=  r_rownum 
+	</select>
+	
+<!-- 基本法产品参数相关 -->	
+ 	<sql id="queryBasicLawProductInfoSQL_selectPart">
+		  tpp.product_id           "productId",
+		  tpp.product_code         "productCode",
+		  tpp.product_name         "productName",
+		  tdc.code_name            "productType",
+		  tpp.product_type         "productTypeCode",
+		  tdcw.code_name           "productSubType",
+		  tpp.product_sub_type     "productSubTypeCode",
+		  tdcs.code_name           "versionExecState",
+		  tbl.exec_state           "versionExecStateCode",
+		  date_format(tbl.exec_startdate,'%Y-%m-%d')       "versionExecStartdate",
+		  date_format(tbl.exec_enddate,'%Y-%m-%d')         "versionExecEnddate",
+		  tbl.basic_Law_Id         "basicLawId",
+		  tbl.version_code         "versionCode",
+		  tbl.version_name         "versionName",(select @rownum:=0)
+	</sql>
+	
+	
+	<!-- 基本法产品参数相关 2-->	
+ 	<sql id="queryBasicLawProductInfoSQL2_selectPart">
+		  tbla.product_id           "productId",
+		  ''	                    "productCode",
+		  ''                        "productName",
+		  tdc.code_name            "productType",
+		  '2'                      "productTypeCode",
+		  tdcw.code_name           "productSubType",
+		  '01'                     "productSubTypeCode",
+		  tdcs.code_name           "versionExecState",
+		  tbl.exec_state           "versionExecStateCode",
+		  date_format(tbl.exec_startdate,'%Y-%m-%d')       "versionExecStartdate",
+		  date_format(tbl.exec_enddate,'%Y-%m-%d')         "versionExecEnddate",
+		  tbl.basic_Law_Id         "basicLawId",
+		  tbl.version_code         "versionCode",
+		  tbl.version_name         "versionName",(select @rownum:=0)
+	</sql>
+	
+	
+	<sql id="queryBasicLawProductInfoSQL_WherePart">
+		where 1 = 1
+		<if test="versionCode!=null and versionCode!=''">
+		   	and versionCode  like '%${versionCode}%'
+		</if>
+		<if test="versionName!=null and versionName!=''">
+		   	and versionName like '%${versionName}%'
+		</if>
+		
+		<if test="versionExecState!=null and versionExecState!=''">
+		   	and versionExecStateCode = #{versionExecState}
+		</if>
+		
+		<if test="productType!=null and productType!=''">
+		   	and productTypeCode = #{productType}
+		</if>
+		<if test="productSubType!=null and productSubType!=''">
+		   	and productSubTypeCode = #{productSubType}
+		</if>
+		<if test="productId!=null and productId!=''">
+		   	and productId = #{productId} 
+		</if>
+		
+		<if test="execStartDate!=null and execStartDate!=''">
+		   	and "versionExecStartdate" >= '${execStartDate}'
+		</if>
+		<if test="execStartToDate!=null and execStartToDate!=''">
+		    and '${execStartToDate}' >= "versionExecStartdate"
+		</if>
+		<if test="execEndDate!=null and execEndDate!=''">
+			and "versionExecEnddate" >= '${execEndDate}'
+		</if>
+		<if test="execEndToDate!=null and execEndToDate!=''">
+		    and '${execEndToDate}' >= "versionExecEnddate"
+		</if>
+	</sql>
+	
+	<sql id="queryBasicLawProductInfoSQL">
+	<!--s-->
+		select * from 
+		(
+			select
+				<include refid="queryBasicLawProductInfoSQL_selectPart"/>
+			from t_basic_law tbl
+			inner join t_basic_law_wealth tblw
+			on tbl.basic_law_id = tblw.basic_law_id
+			and tblw.rc_state='E'
+			inner join t_pd_product tpp
+			on tblw.product_id=tpp.product_id
+			and tpp.rc_state='E'
+			left join t_def_code tdc
+			on tpp.product_type=tdc.code
+			and tdc.code_type='productType'
+			left join t_def_code tdcw
+			on tpp.product_sub_type=tdcw.code
+			and tdcw.code_type='wealthProSubType'
+			left join t_def_code tdcs
+			on tbl.exec_state=tdcs.code
+			and tdcs.code_type='lawExecState'
+			where tbl.rc_state='E'
+		union
+			select
+				<include refid="queryBasicLawProductInfoSQL_selectPart"/>
+			from t_basic_law tbl
+			inner join t_basic_law_ins tbli
+			on tbl.basic_law_id = tbli.basic_law_id
+			and tbli.rc_state='E'
+			inner join t_pd_product tpp
+			on tbli.product_id=tpp.product_id
+			and tpp.rc_state='E'
+			left join t_def_code tdc
+			on tpp.product_type=tdc.code
+			and tdc.code_type='productType'
+			left join t_def_code tdcw
+			on tpp.product_sub_type=tdcw.code
+			and tdcw.code_type='insProSubType'
+			left join t_def_code tdcs
+			on tbl.exec_state=tdcs.code
+			and tdcs.code_type='lawExecState'
+			where tbl.rc_state='E'
+		union
+			select
+				<include refid="queryBasicLawProductInfoSQL_selectPart"/>
+			from t_basic_law tbl
+			inner join t_basic_law_yb tbly
+			on tbl.basic_law_id = tbly.basic_law_id
+			and tbly.rc_state='E'
+			inner join t_pd_product tpp
+			on tbly.product_id=tpp.product_id
+			and tpp.rc_state='E'
+			left join t_def_code tdc
+			on tpp.product_type=tdc.code
+			and tdc.code_type='productType'
+			left join t_def_code tdcw
+			on tpp.product_sub_type=tdcw.code
+			and tdcw.code_type='insProSubType'
+			left join t_def_code tdcs
+			on tbl.exec_state=tdcs.code
+			and tdcs.code_type='lawExecState'
+			where tbl.rc_state='E'
+		union
+			select
+				<include refid="queryBasicLawProductInfoSQL_selectPart"/>
+			from t_basic_law tbl
+			inner join t_basic_law_assess tbla
+			on tbl.basic_law_id = tbla.basic_law_id
+			and tbla.rc_state='E'
+			inner join t_pd_product tpp
+			on tbla.product_id=tpp.product_id
+			and tpp.rc_state='E'
+			left join t_def_code tdc
+			on tpp.product_type=tdc.code
+			and tdc.code_type='productType'
+			left join t_def_code tdcw
+			on tpp.product_sub_type=tdcw.code
+			and tdcw.code_type= if(tpp.product_type='1','wealthProSubType','insProSubType')
+			left join t_def_code tdcs
+			on tbl.exec_state=tdcs.code
+			and tdcs.code_type='lawExecState'
+			where tbl.rc_state='E'
+	   union
+           select
+             <include refid="queryBasicLawProductInfoSQL2_selectPart"/>
+           from t_basic_law tbl
+           inner join t_basic_law_assess tbla
+           on tbl.basic_law_id = tbla.basic_law_id
+           and tbla.product_id is null
+           and tbla.rc_state = 'E'
+           left join t_def_code tdc
+           on tdc.code = '2'
+           and tdc.code_type = 'productType'
+           left join t_def_code tdcw
+           on tdcw.code = '01'
+           and tdcw.code_type = 'insProSubType'
+           left join t_def_code tdcs
+           on tbl.exec_state = tdcs.code
+           and tdcs.code_type = 'lawExecState'
+           where tbl.rc_state = 'E'
+		) as t
+	</sql>
+	
+	<!-- 基本法版本信息列表查询（总记录数）-->
+	<select id="queryBasicLawProductInfoCounts" resultType="java.lang.Integer" parameterType="java.util.Map" >
+		select count(1) from 
+		(
+      	  	<include refid="queryBasicLawProductInfoSQL"/>
+      	  	<include refid="queryBasicLawProductInfoSQL_WherePart"/>
+        ) b
+	</select>
+	
+	<!-- 基本法版本信息列表查询（分页查询）-->
+	<select id="queryBasicLawProductInfoPages" resultType="java.util.Map" parameterType="java.util.Map" >
+        select tAlias.* from
+		(
+	         select nAlias.*,  @rownum:=@rownum+1  r_rownum  from
+	         (
+		         <include refid="queryBasicLawProductInfoSQL"/>
+      	  		 <include refid="queryBasicLawProductInfoSQL_WherePart"/>
+		         
+			 ) nAlias
+		) tAlias where  r_rownum  >=#{queryStartIndex} and #{queryEndIndex} >= r_rownum 
+	</select>	
+	
+	<!-- 查询T_BASIC_LAW_WEALTH，根据BASIC_LAW_ID or PRODUCT_ID -->
+	<select id="queryBasicLawWealthByLPID" resultType="java.util.Map" parameterType="java.util.Map">
+		<!--s-->
+		SELECT     
+			TBLW.BASIC_LAW_WEALTH_ID  	"basicLawWealthId",     <!--财富产品奖金比例流水号-->
+			TBLW.BASIC_LAW_ID       	"basicLawId",      		<!--基本法基本信息流水号-->
+			TBLW.PRODUCT_ID       		"productId",      		<!--产品流水号-->
+			TBLW.EXEC_STATE       		"execState",      		<!--执行状态-->
+			TBLW.SUBSCRIPTION_FEE_UPPER "subscriptionFeeUpper", <!--认购金额上线-->
+			TBLW.SUBSCRIPTION_FEE_LOWER "subscriptionFeeLower", <!--认购金额下线-->
+			TBLW.BONUS_RATE       		"bonusRate",      		<!--奖金比例-->
+			TBLW.EXEC_START_DATE       	"execStartDate",      	<!--执行开始时间-->
+			TBLW.EXEC_END_DATE       	"execEndDate",      	<!--执行结束时间-->
+			CONCAT(TDC.CODE,'-',TDC.CODE_NAME)   "execStateName",     <!--执行状态名称-->
+			TBLW.RC_STATE				"rcState",
+			TBLW.CREATE_DATE			"createDate",
+			TBLW.MODIFY_DATE			"modifyDate",
+			TBLW.OPER_COM_ID			"operComId",
+			TBLW.CREATE_USER_ID			"createUserId",
+			TBLW.MODIFY_USER_ID			"modifyUserId"
+		FROM T_BASIC_LAW_WEALTH TBLW
+		LEFT JOIN T_DEF_CODE TDC
+		ON TDC.CODE=TBLW.EXEC_STATE
+		AND TDC.CODE_TYPE='lawExecState'
+		WHERE TBLW.RC_STATE='E'
+		<if test="basicLawId!=null and basicLawId!=''">
+		   	and TBLW.BASIC_LAW_ID =#{basicLawId}
+		</if>
+		<if test="productId!=null and productId!=''">
+		   	and TBLW.PRODUCT_ID =#{productId}
+		</if>
+	</select>
+	
+	<!-- 查询T_BASIC_LAW_INS，根据BASIC_LAW_ID or PRODUCT_ID -->
+	<select id="queryBasicLawInsByLPID" resultType="java.util.Map" parameterType="java.util.Map">
+	<!--s-->
+		SELECT     
+			TBLI.BASIC_LAW_INS_ID  	"basicLawInsId",     <!--寿险奖金比例流水号-->
+			TBLI.BASIC_LAW_ID  		"basicLawId",      	 <!--基本法基本信息流水号-->
+			TBLI.PRODUCT_ID  		"productId",      	 <!--产品流水号-->
+			TBLI.PREMIUM_UPPER  	"premiumUpper",      <!--保费上限-->
+			TBLI.PREMIUM_LOWER  	"premiumLower",      <!--保费下限-->
+			TBLI.POLICY_YEAR  		"policyYear",      	 <!--保单年度-->
+			TBLI.BONUS_RATE  		"bonusRate",      	 <!--奖金比例-->
+			TBLI.EXEC_START_DATE  	"execStartDate",     <!--执行开始时间-->
+			TBLI.EXEC_END_DATE  	"execEndDate",     	 <!--执行结束时间-->
+			TBLI.EXEC_STATE  		"execState",      	 <!--执行状态-->
+			CONCAT(TDC.CODE,'-',TDC.CODE_NAME)    "execStateName",    <!--执行状态名称-->
+			TBLI.RC_STATE				"rcState",
+			TBLI.CREATE_DATE			"createDate",
+			TBLI.MODIFY_DATE			"modifyDate",
+			TBLI.OPER_COM_ID			"operComId",
+			TBLI.CREATE_USER_ID			"createUserId",
+			TBLI.MODIFY_USER_ID			"modifyUserId"
+		FROM T_BASIC_LAW_INS TBLI
+		LEFT JOIN T_DEF_CODE TDC
+		ON TDC.CODE=TBLI.EXEC_STATE
+		AND TDC.CODE_TYPE='lawExecState'
+		WHERE TBLI.RC_STATE='E'
+		and TBLI.Product_Id is null
+		<if test="basicLawId!=null and basicLawId!=''">
+		   	and TBLI.BASIC_LAW_ID =#{basicLawId}
+		</if>
+	</select>
+	
+	<!-- 查询T_BASIC_LAW_YB，根据BASIC_LAW_ID or PRODUCT_ID -->
+	<select id="queryBasicLawYBByLPID" resultType="java.util.Map" parameterType="java.util.Map">
+	<!--s-->
+		SELECT     
+			TBLY.BASIC_LAW_YB_BONUS_RATE_ID  	"basicLawYbBonusRateId",    <!--银保产品奖金比例流水号-->
+			TBLY.BASIC_LAW_ID  					"basicLawId",      			<!--基本法基本信息流水号-->
+			TBLY.PRODUCT_ID  					"productId",      			<!--产品流水号-->
+			TBLY.PAYMENT_PERIOD  				"paymentPeriod",      		<!--缴费期间-->
+			TBLY.PAYMENT_UNIT  					"paymentUnit",      		<!--缴费期间单位-->
+			TBLY.POLICY_YEAR  					"policyYear",      			<!--保单年度-->
+			TBLY.BONUS_RATE  					"bonusRate",      			<!--奖金比例-->
+			TBLY.EXEC_START_DATE  				"execStartDate",      		<!--执行开始时间-->
+			TBLY.EXEC_END_DATE  				"execEndDate",      		<!--执行结束时间-->
+			TBLY.EXEC_STATE  					"execState",      			<!--执行状态-->
+			CONCAT(TDC.CODE,'-',TDC.CODE_NAME)	"execStateName",      		<!--执行状态名称-->
+			TBLY.RC_STATE				"rcState",
+			TBLY.CREATE_DATE			"createDate",
+			TBLY.MODIFY_DATE			"modifyDate",
+			TBLY.OPER_COM_ID			"operComId",
+			TBLY.CREATE_USER_ID			"createUserId",
+			TBLY.MODIFY_USER_ID			"modifyUserId"
+		FROM T_BASIC_LAW_YB TBLY
+		LEFT JOIN T_DEF_CODE TDC
+		ON TDC.CODE=TBLY.EXEC_STATE
+		AND TDC.CODE_TYPE='lawExecState'
+		WHERE TBLY.RC_STATE='E'
+		<if test="basicLawId!=null and basicLawId!=''">
+		   	and TBLY.BASIC_LAW_ID =#{basicLawId}
+		</if>
+		<if test="productId!=null and productId!=''">
+		   	and TBLY.PRODUCT_ID =#{productId}
+		</if>
+	</select>
+	
+	<!-- 查询T_BASIC_LAW_ASSESS，根据BASIC_LAW_ID or PRODUCT_ID -->
+	<select id="queryBasicLawAssessByLPID" resultType="java.util.Map" parameterType="java.util.Map">
+	<!--s-->
+	SELECT     
+      TBLA.BASIC_LAW_ASSESS_ID    "basicLawAssessId",    
+      TBLA.BASIC_LAW_ID        "basicLawId",         
+      TBLA.PRODUCT_ID        "productId",         
+      TOC.Code_Name          "paramName",           
+      TBLA.Param             "param",
+      TBLA.PARAM_UPPER        "paramUpper",        
+      TBLA.PARAM_LOWER        "paramLower",         
+      TFC.Code_Name        "paramUnitName",          
+      TBLA.Param_Unit      "paramUnit",
+      TBLA.DURATION_RATE      "durationRate",        
+      TBLA.EXEC_START_DATE      "execStartDate",        
+      TBLA.EXEC_END_DATE      "execEndDate",       
+      TBLA.EXEC_STATE        "execState",          
+      TDC.CODE_NAME        "execStateName",       
+      TBLA.RC_STATE        "rcState",
+      TBLA.CREATE_DATE      "createDate",
+      TBLA.MODIFY_DATE      "modifyDate",
+      TBLA.OPER_COM_ID      "operComId",
+      TBLA.CREATE_USER_ID      "createUserId",
+      TBLA.MODIFY_USER_ID      "modifyUserId"
+    FROM T_BASIC_LAW_ASSESS TBLA
+    LEFT JOIN T_DEF_CODE TDC
+    ON TDC.CODE=TBLA.EXEC_STATE
+    AND TDC.CODE_TYPE='lawExecState'
+    LEFT JOIN T_DEF_CODE TOC
+    ON TOC.CODE=TBLA.Param
+    AND TOC.CODE_TYPE='assessParam'
+    LEFT JOIN T_DEF_CODE TFC
+    ON TFC.CODE=TBLA.Param_Unit
+    AND TFC.CODE_TYPE='payPeriodUnit'
+    WHERE TBLA.RC_STATE='E'
+		<if test="basicLawId!=null and basicLawId!=''">
+		   	and TBLA.BASIC_LAW_ID =#{basicLawId}
+		</if>
+		<if test="productId!=null and productId!=''">
+		   	and TBLA.PRODUCT_ID =#{productId}
+		</if>
+		<if test="productId==null or productId==''">
+		   	and TBLA.PRODUCT_ID is null
+		</if>
+	</select>
+	
+	
+	<select id="queryWealthProductToVersionExecState" resultType="com.fms.db.model.BasicLaw" parameterType="java.util.Map">
+		<!--s-->
+		select b.version_code "versionCode"
+	     from t_basic_law_wealth a
+	    inner join t_basic_law b
+	       on a.basic_law_id = b.basic_law_id
+	    where a.rc_state = 'E'
+	      and b.rc_state = 'E'
+	      and b.exec_state = '1'
+	      and a.product_id = #{productId}
+	      <if test="basicLawId!=null and basicLawId!=''">
+	     	 and b.basic_law_id != #{basicLawId}
+	      </if>
+	</select>
+	
+	<select id="queryYBProductToVersionExecState" resultType="com.fms.db.model.BasicLaw" parameterType="java.util.Map">
+		select b.version_code "versionCode"
+	     from t_basic_law_yb a
+	    inner join t_basic_law b
+	       on a.basic_law_id = b.basic_law_id
+	    where a.rc_state = 'E'
+	      and b.rc_state = 'E'
+	      and b.exec_state = '1'
+	      and a.product_id = #{productId}
+	      <if test="basicLawId!=null and basicLawId!=''">
+	     	 and b.basic_law_id != #{basicLawId}
+	      </if>
+	</select>
+	
+	<select id="queryInsProductToVersionExecState" resultType="com.fms.db.model.BasicLaw" parameterType="java.util.Map">
+		select b.version_code "versionCode"
+	     from t_basic_law_Ins a
+	    inner join t_basic_law b
+	       on a.basic_law_id = b.basic_law_id
+	    where a.rc_state = 'E'
+	      and b.rc_state = 'E'
+	      and b.exec_state = '1'
+	      and a.product_id = #{productId}
+	      <if test="basicLawId!=null and basicLawId!=''">
+	     	 and b.basic_law_id != #{basicLawId}
+	      </if>
+	</select>
+	
+	<select id="queryAssessProductToVersionExecState" resultType="com.fms.db.model.BasicLaw" parameterType="java.util.Map">
+		select b.version_code "versionCode"
+	     from t_basic_law_assess a
+	    inner join t_basic_law b
+	       on a.basic_law_id = b.basic_law_id
+	    where a.rc_state = 'E'
+	      and b.rc_state = 'E'
+	      and b.exec_state = '1'
+	      and a.product_id = #{productId}
+	      <if test="basicLawId!=null and basicLawId!=''">
+	     	 and b.basic_law_id != #{basicLawId}
+	      </if>
+	</select>
+	
+</mapper>

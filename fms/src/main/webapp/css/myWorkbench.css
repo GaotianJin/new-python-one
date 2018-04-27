@@ -1,0 +1,142 @@
+.table{	
+	width:99%;	
+}
+.line1{
+	background:#cee3ef;
+	border:1px solid #b9c7d5;
+	height:28px;
+}
+.table1 .line2{
+	background:#edf7fc;
+	border:1px solid #d6e6f4;
+	border-top:none;
+	height:28px;
+}
+
+.line3{
+	border:1px solid #d6e6f4;
+	border-top:none;
+	height:28px;
+}
+.row a{
+	color:#696969;
+}
+.row span{
+	color:#c7000a;
+}
+.row{
+	display:inline-block;
+	line-height:28px;	
+	text-align:center;
+}
+
+
+.line1 .row{
+	width:95px;
+}
+.line1 .row:hover{
+	background:#edf7fc;
+}
+.line1 .first{
+	margin-left:20px;
+}
+.line1 .select{
+	background:#edf7fc;
+	border-bottom:1px solid #edf7fc;
+}
+
+.line2 .row1{
+	width:10%;
+}
+.line2 .row2{
+	width:35%;
+}
+.line2 .row3,.line2 .row4,.line2 .row5{
+	width:14%;
+}
+.line2 .row6{
+	width:10%;
+}
+.line3 .row1{
+	width:10%;
+	border-right:1px solid #d6e6f4;
+}
+.line3 .row2{
+	width:35%;
+	border-right:1px solid #d6e6f4;
+}
+.line3 .row3,.line3 .row4,.line3 .row5{
+	width:14%;
+	border-right:1px solid #d6e6f4;
+}
+.line3 .row6{
+	width:9%;
+}
+.line3 .row a{
+	color:#004898;
+	text-decoration:underline;
+}
+.table2{
+	margin-top:20px;
+}
+.table2 .line2,.table3 .line2{
+	background:#edf7fc;
+	border:1px solid #d6e6f4;
+	height:28px;
+}
+.table2 .line2 .row2,.table2 .line3 .row2{
+	width:64%;
+}
+.table1 .line3:hover,.table2 .line3:hover{
+	background:#f4fafd;
+}
+
+
+.table3 .line2 .row0{
+	width:28px;
+}
+.table3 .line2 .row1{
+	width:200px;
+	text-align:left;
+}
+.table3 .line3 .rowa,.table3 .line3 .rowc,.table3 .line3 .rowe{
+	width:14%;
+	background:#f8f8f8;
+	text-align:right;
+	padding-right:10px;
+}
+.table3 .line3 .rowb,.table3 .line3 .rowd,.table3 .line3 .rowf{
+	width:18%;
+	text-align:left;
+}
+
+input.text,select{
+	border:1px solid #e3eaf0;
+	width:200px;
+	height:20px;
+}
+
+.table_a{
+	margin-top:30px;
+}
+
+.btn{
+	float:right;
+	margin-top:30px;
+	padding-right:20px;
+}
+.btn .btn1{
+	display:inline-block;
+	width:68px;
+	height:22px;
+	background:#c7d5e7;
+	border:1px solid #a5bfe1;
+	text-align:center;
+	line-height:20px;
+}
+.btn a{
+	color:#414141;
+	
+	
+	
+}

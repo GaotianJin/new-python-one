@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+
+	<session-factory>
+		<!-- Properties defined here are shared between test and production <property 
+			name="cache.provider_class">org.hibernate.cache.NoCacheProvider</property> -->
+
+		<!-- This is a tweaked version of Hibernate's DriverManagerConnectionProvider 
+			which works with Mule's hot deployment -->
+		<property name="hibernate.connection.provider_class">org.hibernate.connection.SimpleConnectionProvider</property>
+
+		<!-- This property improves thread contention with Mule services a bit -->
+		<property name="hibernate.transaction.flush_before_completion">true</property>
+		<!-- <property name="hibernate.cache.use_second_level_cache">false</property> -->
+		
+		<property name="show_sql">true</property>
+		<property name="format_sql">true</property>
+		<!-- update -->
+		<property name="hbm2ddl.auto">none</property>
+		
+		
+		<!-- Standard jBPM mappings -->
+		<!-- <mapping resource="jbpm.repository.hbm.xml" />
+		<mapping resource="jbpm.history.hbm.xml" />
+		<mapping resource="jbpm.task.hbm.xml" />
+		<mapping resource="jbpm.identity.hbm.xml" /> -->
+
+		<!-- Hibernate defaults Derby's BLOB columns to be too small -->
+		<!-- <mapping resource="jbpm/jbpm.execution.derby.hbm.xml" /> -->
+		
+		<!--自动读取目录下所有映射文件-->
+		
+		<!--  
+		<mapping resource="hibernate/TfCmAditem.hbm.xml" />
+		<mapping resource="hibernate/TfCmClaim.hbm.xml" />
+		<mapping resource="hibernate/TfCmCripple.hbm.xml" />
+		<mapping resource="hibernate/TfCmOptrack.hbm.xml" />
+		<mapping resource="hibernate/TfCmPaybnf.hbm.xml" />
+		<mapping resource="hibernate/TfCmRefundment.hbm.xml" />-->
+		
+		
+        
+        
+	</session-factory>
+
+</hibernate-configuration>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<process xmlns="http://jbpm.org/4.4/jpdl" name="OPFE_CM">
+  <start g="223,52,52,52" name="开始" id="start-0">
+    <transition name="" g="246,116:" to="分支" id="start-0-fork-3*-p0"/>
+  </start>
+  <task g="201,251,102,52" name="初审" id="task-2" assignee="#{userId}">
+    <transition name="" g="248,318:" to="复核" id="task-2-task-5*-p0"/>
+  </task>
+  <fork g="224,162,52,52" name="分支" id="fork-3">
+    <transition name="" g="248,231:" to="初审" id="fork-3-task-2*-p0"/>
+    <transition name="" g="331,186:" to="理赔撤销" id="fork-3-task-4*-p0"/>
+  </fork>
+  <task g="369,160,102,52" name="理赔撤销" id="task-4" assignee="#{userId}">
+    <transition name="" g="417,681:" to="结束" id="task-4-end-7*-p0"/>
+  </task>
+  <task g="200,337,102,52" name="复核" id="task-5" assignee="#{userId}">
+    <transition name="" g="247,403:" to="是否通过" id="task-5-decision-7*-p0"/>
+  </task>
+  <end g="227,655,52,52" name="结束" id="end-7"/>
+  <decision g="223,420,52,52" name="是否通过" id="decision-7" expr="#{content}">
+    <transition name="no" g="72,373:" to="初审" id="decision-7-task-2*-p0"/>
+    <transition name="yes" g="248,553:" to="结束" id="decision-7-end-7*-p0"/>
+  </decision>
+</process>

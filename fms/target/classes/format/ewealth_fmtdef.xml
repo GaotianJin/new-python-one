@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pattern>
+	<fmtdef id="eWealthGetProductInfo" object="object" loop="loop">
+		<object tag="eWealthXml" data="reqDataMap">
+			<object tag="eWealthHeader" data="headData">
+				<businessCode>PRO01</businessCode>
+				<systemCode>LC01</systemCode>
+				<password></password>
+				<resultCode></resultCode>
+				<resultDesc></resultDesc>
+				<signMsg>${signMsg}</signMsg>
+				<requestCode>0</requestCode>
+			 </object>
+			 <object tag="eWealthContent" data="contentData">
+				<productCode>${productCode}</productCode>
+				<productName>${productName}</productName>
+				<productShortName>${productShortName}</productShortName>
+				<agencyName>${agencyName}</agencyName>
+				<agencyCode>${agencyCode}</agencyCode>
+				<productType>${productType}</productType>
+				<productSubType>${productSubType}</productSubType>
+				<introduceDate>${introduceDate}</introduceDate>
+				<tradeWays>${tradeWays}</tradeWays>
+				<buyType>${buyType}</buyType>
+				<promotionWays>${promotionWays}</promotionWays>
+				<saleChnls>${saleChnls}</saleChnls>
+				<payWays>${payWays}</payWays>
+				<isShow>${isShow}</isShow>
+				<isShowFirst>${isShowFirst}</isShowFirst>
+				<internetProductType>${internetProductType}</internetProductType>
+				<lvchengFlag>${lvchengFlag}</lvchengFlag>
+				<hotSaleFlag>${hotSaleFlag}</hotSaleFlag>
+				<loop tag="wealthDetail" data="wealthContentList">
+				  <object tag="wealthDetail" data="?">
+					<saleSumAmount>${saleSumAmount}</saleSumAmount>
+					<minTradeAmount>${minTradeAmount}</minTradeAmount>
+					<maxTradeAmount>${maxTradeAmount}</maxTradeAmount>
+					<investIncreaseMoney>${investIncreaseMoney}</investIncreaseMoney>
+					<investDays>${investDays}</investDays>
+					<investDaysUnit>${investDaysUnit}</investDaysUnit>
+					<closePeriodDesc>${closedPeriodDesc}</closePeriodDesc>
+					<beneficalTypes>${beneficalTypes}</beneficalTypes>
+					<historyEarnRate>${historyEarnRate}</historyEarnRate>
+					<investStartTime>${investStartTime}</investStartTime>
+					<investEndTime>${investEndTime}</investEndTime>
+					<closeAccountDate>${closeAccountDate}</closeAccountDate>
+					<foundDate>${foundDate}</foundDate>
+				  </object>
+				  <object tag="wealthDetail" data="?">
+						<saleSumAmount>${saleSumAmount}</saleSumAmount>
+						<minTradeAmount>${minTradeAmount}</minTradeAmount>
+						<maxTradeAmount>${maxTradeAmount}</maxTradeAmount>
+						<investIncreaseMoney>${investIncreaseMoney}</investIncreaseMoney>
+						<investDays>${investDays}</investDays>
+						<investDaysUnit>${investDaysUnit}</investDaysUnit>
+						<closePeriodDesc>${closedPeriodDesc}</closePeriodDesc>
+						<beneficalTypes>${beneficalTypes}</beneficalTypes>
+						<investStartTime>${investStartTime}</investStartTime>
+						<investEndTime>${investEndTime}</investEndTime>
+						<closeAccountDate>${closeAccountDate}</closeAccountDate>
+						<foundDate>${foundDate}</foundDate>
+					</object>
+				</loop>
+				<!--保险产品详细信息 -->
+				<loop tag="insuranceDetail" data="insuranceContentDataList">
+					<object tag="insuranceDetail" data="?">
+						<insureYears>${insureYears}</insureYears>
+						<insureYearsUnit>${insureYearsUnit}</insureYearsUnit>
+						<mainFlag>${mainFlag}</mainFlag>
+						<payYears>${payYears}</payYears>
+						<minAppAge>${minAppAge}</minAppAge>
+						<minAppAgeUnit>${minAppAgeUnit}</minAppAgeUnit>
+						<maxAppAge>${maxAppAge}</maxAppAge>
+						<maxAppAgeUnit>${maxAppAgeUnit}</maxAppAgeUnit>
+						<description>${description}</description>
+					</object>
+				</loop>
+				<inputInfo>
+					<loop tag="inputItem" data="inputItemListData">
+						<object tag="inputItem" data="?">
+							<inputCode>${inputCode}</inputCode>
+							<inputScope>${inputScope}</inputScope>
+							<isMust>${isMust}</isMust>
+							<seq>${seq}</seq>
+						</object>
+					</loop>
+				</inputInfo>
+				<showInfo>
+					<loop tag="showItem" data="showItemDataList">
+						<object tag="showItem" data="?">
+							<itemName>${itemName}</itemName>
+							<itemValue>${itemValue}</itemValue>
+							<showAreaType>${showAreaType}</showAreaType>
+							<seq>${seq}</seq>
+							<description>${description}</description>
+						</object>
+					</loop>
+				</showInfo>
+				<productFeeRateInfo>
+					<loop tag="productFeeRateItem" data="productFeeRateItemListData">
+						<object tag="productFeeRateItem" data="?">
+							<subscriptionFeeUpper>${subscriptionFeeUpper}</subscriptionFeeUpper>
+							<subscriptionFeeLower>${subscriptionFeeLower}</subscriptionFeeLower>
+							<beneficialType>${beneficalType}</beneficialType>
+							<closedPeriod>${closedPeriod}</closedPeriod>
+							<closedPeriodUnit>${closedPeriodUnit}</closedPeriodUnit>
+							<feeRate>${feeRate}</feeRate>
+							<expectedFeeRate>${expectedFeeRate}</expectedFeeRate>
+							<addExpectedFeeRate>${addExpectedFeeRate}</addExpectedFeeRate>
+						</object>
+					</loop>
+				</productFeeRateInfo>
+				<customerInfo>
+					<loop tag="customerItem" data="customerItemListData">
+						<object tag="customerItem" data="?">
+							<inputCode>${inputCode}</inputCode>
+							<inputScope>${inputScope}</inputScope>
+							<isMust>${isMust}</isMust>
+							<seq>${seq}</seq>
+						</object>
+					</loop>
+				</customerInfo>
+				<productInfo>${productInfo}</productInfo>
+				<appendixInfo>
+					<loop tag="appendixItem" data="appendixItemListData">
+						<object tag="appendixItem" data="?">
+							<appendixName>${appendixName}</appendixName>
+							<appendixType>${appendixType}</appendixType>
+							<appendixUrl>${appendixUrl}</appendixUrl>
+							<description>${description}</description>
+						</object>
+					</loop>
+				</appendixInfo>
+			</object>
+		</object>
+	</fmtdef>
+
+	<fmtdef id="test" object="object" loop="loop">
+		<object tag="eWealthXml" data="reqDataMap">
+			<object tag="eWealthHeader" data="headData">
+				<businessCode>0001</businessCode>
+				<systemCode>fms</systemCode>
+				<password>ASDFnm,.</password>
+				<resultCode>01</resultCode>
+				<resultDesc>success</resultDesc>
+				<signMsg></signMsg>
+				<requestCode>accInfo</requestCode>
+			</object>
+			<object tag="eWealthContent" data="contentData">
+				<custNo>${custNo}</custNo>
+				<custName>${custName}</custName>
+				<accTotal>${accTotal}</accTotal>
+				<productList>
+					<loop tag="productInfo" data="productListData">
+						<object tag="productInfo" data="?">
+							<productName>${productName}</productName>
+							<subscriptionFee>${subscriptionFee}</subscriptionFee>
+						</object>
+					</loop>
+				</productList>
+			</object>
+		</object>
+	</fmtdef>
+
+	<fmtdef id="tradeRiskInfo" object="object" loop="loop">
+		<object tag="eWealthXml" data="messageTotalMap">
+			<object tag="eWealthHeader" data="eWealthHeader">
+				<businessCode>${businessCode}</businessCode>
+				<systemCode>${systemCode}</systemCode>
+				<password>${password}</password>
+				<resultCode>${resultCode}</resultCode>
+				<resultDesc>${resultDesc}</resultDesc>
+				<signMsg></signMsg>
+				<requestCode>${requestCode}</requestCode>
+			</object>
+			<object tag="eWealthContent" data="eWealthContent">
+				<tradeRiskList>
+					<loop tag="tradeRiskInfo" data="tradeRiskList">
+						<object tag="tradeRiskInfo" data="?">
+							<tradeNo>${tradeNo}</tradeNo>
+							<customerName>${customerName}</customerName>
+							<productName>${productName}</productName>
+							<agencyName>${agencyName}</agencyName>
+							<amntTotal>${amntTotal}</amntTotal>
+							<premium>${premium}</premium>
+							<tradeDate>${tradeDate}</tradeDate>
+						</object>
+					</loop>
+				</tradeRiskList>
+			</object>
+		</object>
+	</fmtdef>
+	<fmtdef id="getWealthPdInfo" object="object" loop="loop">
+		<object tag="eWealthXml" data="messageTotalMap">
+			<object tag="eWealthHeader" data="eWealthHeader">
+				<businessCode>${businessCode}</businessCode>
+				<systemCode>${systemCode}</systemCode>
+				<password>${password}</password>
+				<resultCode>${resultCode}</resultCode>
+				<resultDesc>${resultDesc}</resultDesc>
+				<signMsg></signMsg>
+				<requestCode>${requestCode}</requestCode>
+			</object>
+			<object tag="eWealthContent" data="eWealthContent">
+				<orderInfoList>
+					<loop tag="orderInfo" data="WealthPdInfoList">
+						<object tag="orderInfo" data="?">
+							<tradeInfoId>${tradeInfoId}</tradeInfoId>
+							<name>${custName}</name>
+							<productName>${productName}</productName>
+							<mechanism>${mechanism}</mechanism>
+							<totalAmount>${totalAmount}</totalAmount>
+							<investmentDate>${investmentDate}</investmentDate>
+							<yield>${yield}</yield>
+							<establishDate>${establishDate}</establishDate>
+						</object>
+					</loop>
+				</orderInfoList>
+			</object>
+		</object>
+	</fmtdef>
+	
+	
+	<fmtdef id="eWealthGetOpenDayInfo" object="object" loop="loop">
+		<object tag="eWealthXml" data="reqDataMap">
+			<object tag="eWealthHeader" data="headData">
+				<businessCode></businessCode>
+				<systemCode>LC01</systemCode>
+				<password></password>
+				<resultCode></resultCode>
+				<resultDesc></resultDesc>
+				<signMsg></signMsg>
+				<requestCode>0</requestCode>
+			</object>
+			<object tag="eWealthContent" data="contentData">
+				<productCode>${productCode}</productCode>
+             	<openDayInfoList>
+				<loop tag="openDayItem" data="openDayItemDataList">
+				<object tag="openDayItem" data="?">
+				  <openDay>${openDay}</openDay>
+				</object>
+				</loop>
+				</openDayInfoList>
+			</object> 
+		</object>
+	</fmtdef>
+	
+	<fmtdef id="eWealthGetNetValueInfo" object="object" loop="loop">
+		<object tag="eWealthXml" data="reqDataMap">
+			<object tag="eWealthHeader" data="headData">
+				<businessCode></businessCode>
+				<systemCode>LC01</systemCode>
+				<password></password>
+				<resultCode></resultCode>
+				<resultDesc></resultDesc>
+				<signMsg></signMsg>
+				<requestCode>0</requestCode>
+			</object>
+			<object tag="eWealthContent" data="contentData">
+				<productName>${productName}</productName>
+				<productCode>${productCode}</productCode>
+               <netValueInfoList>
+			      <loop tag="netValueItem" data="netValueInfoList">
+					<object tag="netValueItem" data="?">
+					  <netType>${netType}</netType>
+					  <netValue>${netValue}</netValue>
+					  <publicDate>${publicDate}</publicDate>
+					</object>
+			 	</loop>
+	         </netValueInfoList>
+			</object> 
+		</object>
+	</fmtdef>
+	
+</pattern>

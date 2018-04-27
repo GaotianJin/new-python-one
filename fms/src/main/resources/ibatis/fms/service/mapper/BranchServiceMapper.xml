@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.fms.service.mapper.BranchServiceMapper">
+
+  	<sql id="branchBuildListCondition">
+  		<if test="buildingCode != null and buildingCode !=''" >
+      		AND A.BUILDING_CODE = #{buildingCode}
+    	</if>
+    	<if test="buildingName != null and buildingName !=''" >
+      		AND A.BUILDING_NAME = #{buildingName}
+    	</if>
+    	<if test="buildingType != null and buildingType !=''" >
+      		AND A.BUILDING_TYPE = #{buildingType}
+    	</if>
+    	<if test="estateType != null and estateType !=''" >
+      		AND A.ESTATE_TYPE = #{estateType}
+    	</if>
+    	<if test="avgPriceStart != null and avgPriceStart !=''" >
+      		AND A.AVGPRICE <![CDATA[>=]]> #{avgPriceStart}
+    	</if>
+    	<if test="avgPriceEnd != null and avgPriceEnd !=''" >
+      		AND A.AVGPRICE  <![CDATA[<=]]> #{avgPriceEnd}
+    	</if>
+  	</sql>
+
+    <select id="branchBuildListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_DEF_BUILDING A
+		WHERE 1=1 AND RC_STATE != 'D'
+		<include refid="branchBuildListCondition"/>
+    </select> 
+    
+      <select id="branchBuildListPage" parameterType="java.util.Map" resultType="java.util.Map">
+      <!--s-->
+      
+  		select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1  r_rownum from
+         	(
+         		SELECT A.BUILDING_ID "buildingId",A.BUILDING_CODE "buildingCode",A.BUILDING_NAME "buildingName",A.BUILDING_TYPE "buildingType",
+         			FUNC_GET_CODE_NAME('buildingtype',A.BUILDING_TYPE) "buildingTypeName",A.STAY_NUM "stayNum",
+		  			A.ESTATE_TYPE "estateType",FUNC_GET_CODE_NAME('estatetype',A.ESTATE_TYPE) "estateTypeName",
+		  			A.STAY_RATE "stayRate",A.DEVELOPER "developer",A.AVGPRICE "avgPrice",A.CITY "address",
+		  			A.ZIP_CODE "zipCode"
+		  			,(SELECT @rownum := 0)
+				FROM T_DEF_BUILDING A        
+				WHERE 1=1 AND RC_STATE != 'D'
+			<include refid="branchBuildListCondition"/>
+ 			) nAlias
+		) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+    </select> 
+    
+    
+    <!-- 
+    <sql id="branchDepartmentListCondition">
+  		<if test="departmentCode != null and departmentCode !=''" >
+      		AND A.BUILDING_CODE = #{buildingCode}
+    	</if>
+  	</sql>
+  	
+  	<select id="branchDepartmentListCount" parameterType="java.util.Map" resultType="java.util.Map">
+  		SELECT COUNT(1)
+  		FROM T_DEF_DEPARTMENT D
+  		WHERE 1=1
+  		<include refid="branchDepartmentListCondition"/>
+  	</select>
+  	
+  	<select id="branchDepartmentListCount" parameterType="java.util.Map" resultType="java.util.Map">
+  		SELECT COUNT(1)
+  		FROM T_DEF_DEPARTMENT D
+  		WHERE 1=1
+  		<include refid="branchDepartmentListCondition"/>
+  	</select>
+     -->
+  	
+  	
+  	
+  
+    
+</mapper>

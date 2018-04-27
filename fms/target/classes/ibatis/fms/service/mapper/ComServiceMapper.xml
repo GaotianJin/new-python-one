@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.ComServiceMapper" >
+	<sql id="queryComListInfoSQL">
+	
+	<!--s-->
+
+		select 
+		      (SELECT @rownum := 0),
+		      com_id    "comId",      <!-- 机构流水ID -->
+		      com_code  "comCode",      <!-- 机构编码 -->
+		      com_name  "comName",      <!-- 机构名称 -->
+		      grade    "grade",      <!-- 机构级别 -->
+		      (select CONCAT(a.com_code,'-',a.com_name )
+		      		from t_def_com a 
+		      	where a.com_id=tdc.parent_com_id
+		      	and a.rc_state='E')      "parentComId",    <!-- 上级机构 -->
+		     CONCAT(
+						IFNULL(tdap.place_name,''),
+						IFNULL(tdacity.place_name,''),
+						IFNULL(tdacountry.place_name,''),
+						IFNULL(tdc.street,'')
+					) "address",    <!-- 上级机构 -->
+		      a.code_name    "state",      <!-- 机构状态 -->
+		      zipcode    "zipcode",   <!-- 邮政编码 -->
+		      phone    "phone",      <!-- 电话 -->
+		      manager_name  "managerName",  <!-- 负责人姓名 -->
+		      manager_mobile "managerMobile"<!-- 负责人电话 -->
+	    from t_def_com tdc
+	    left join t_def_address tdap
+	    on tdap.place_code=tdc.province
+	    and tdap.place_type='01' <!-- 省 -->
+	    left join t_def_address tdacity
+	    on tdacity.place_code=tdc.city
+	    and tdacity.place_type='02' <!-- 市 -->
+	    left join t_def_address tdacountry
+	    on tdacountry.place_code=tdc.country
+	    and tdacountry.place_type='03' <!-- 区 -->
+	    left join t_def_code a
+	    on a.code=tdc.state
+	    and a.code_type='comState'
+	    where 1 = 1 and rc_state='E'
+		<if test="comCode!=null and comCode!=''">
+		   	and tdc.com_code like '%${comCode}%'
+		</if>
+		<if test="comName!=null and comName!=''">
+		   	and tdc.com_name like '%${comName}%'
+		</if>
+		<if test="parentComId!=null and parentComId!=''">
+		   	and tdc.parent_com_id = #{parentComId}
+		</if>
+	</sql>
+	
+	
+	<!-- 机构信息列表查询（全部） -->
+	<select id="queryComListCode" resultType="java.util.Map" parameterType="java.util.Map" >
+	<!--s-->
+	
+        select 
+			com_Id	"id",			<!-- 机构编码 -->
+			CONCAT(com_code,'-',com_name)	"name"			<!-- 机构名称 -->
+		from t_def_com tdc
+		where rc_state='E'
+	</select>
+	
+	
+	<!-- 根据机构名称查询 -->
+	<select id="queryComByComName" resultType="com.sinosoft.core.db.model.DefCom" parameterType="com.sinosoft.core.db.model.DefCom" >
+        select 
+			   com_id "comId",
+       		   com_name "comName",
+       		   com_code "comCode"
+		from t_def_com
+		where rc_state='E'
+		and com_name = #{comName}
+	</select>
+	
+	<!-- 根据机构代码查询 -->
+	<select id="queryComByComCode" resultType="com.sinosoft.core.db.model.DefCom" parameterType="com.sinosoft.core.db.model.DefCom" >
+       select  com_id "comId",
+       		   com_name "comName",
+       		   com_code "comCode"
+		from  t_def_com
+		where rc_state='E'
+		and com_code = #{comCode}
+	</select>
+	
+	
+	<!-- 机构信息列表查询（全部） -->
+	<select id="queryComBelongListInfo" resultType="java.util.Map" parameterType="java.util.Map" >
+	
+	<!--s-->
+       select 
+		  tcb.BLCOM_ID                    "blcomId",
+		  tcb.COM_ID                      "comId",
+		  tcb.BELONG_COM_ID               "belongComId",
+		  CONCAT(tdc.com_code,'-',tdc.com_name) "belongComName",
+		  tcb.START_DATE                  "startDate",
+		  tcb.END_DATE                    "endDate",
+		  tcb.RC_STATE                    "rcState",
+		  tcb.CREATE_DATE                 "createDate",
+		  tcb.MODIFY_DATE                 "modifyDate",       
+		  tcb.OPER_COM_ID                 "operComId",
+		  tcb.CREATE_USER_ID              "createUserId",
+		  tcb.MODIFY_USER_ID              "modifyUserId"
+		from t_com_belong_trace tcb
+		left join t_def_com tdc
+		on tcb.BELONG_COM_ID=tdc.com_id
+		and tdc.rc_state='E'
+	    and tcb.COM_ID = #{comId}
+		<if test="blcomId!=null and blcomId!=''">
+		   	and BLCOM_ID=#{blcomId}
+		</if>		
+	</select>
+	
+	
+	<!-- 机构信息列表查询（总记录数） -->
+	<select id="queryComListInfoCounts" resultType="java.lang.Integer" parameterType="java.util.Map" >
+		select count(1) from 
+		(
+      	  	<include refid="queryComListInfoSQL"/>
+        )a
+	</select>
+	
+	<!-- 机构信息列表查询（分页查询） -->
+	<select id="queryComListInfoPages" resultType="java.util.Map" parameterType="java.util.Map" >
+        select tAlias.* from
+		(
+	         select nAlias.*, @rownum:=@rownum+1  r_rownum from
+	         (
+		         <include refid="queryComListInfoSQL"/>
+		         
+			 ) nAlias
+		) tAlias where r_rownum >=#{queryStartIndex} and #{queryEndIndex} >= r_rownum
+	</select>
+	
+</mapper>

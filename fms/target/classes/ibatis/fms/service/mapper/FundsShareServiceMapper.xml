@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.fms.service.mapper.FundsShareServiceMapper">
+	<sql id="queryTradeListCondition">
+    	<if test="custName != null and custName !=''" >
+      		AND B.CHN_NAME like '%${custName}%'
+    	</if>
+    	<if test="tradeInfoNo != null and tradeInfoNo !=''" >
+      		AND A.TRADE_NO <![CDATA[=]]> '${tradeInfoNo}'
+    	</if>
+    	<if test="productName != null and productName !=''" >
+      		AND D.PRODUCT_ID <![CDATA[=]]> '${productName}'
+    	</if>
+    </sql>
+    <sql id="queryTradeInfoListPrivilegeControl">
+		<!-- 以下是查询权限控制 3-本机构及下属机构数据，2-本机构数据，1-本人数据-->
+    	<if test='rolePrivilege!=null and rolePrivilege!="" and rolePrivilege=="3"'>
+    		AND A.OPER_COM_ID IN(
+   				<!-- SELECT C.COM_ID
+				FROM T_DEF_COM C 
+				WHERE C.RC_STATE = 'E'
+					AND C.STATE='01'
+					START WITH C.COM_ID = #{operComId} CONNECT BY PRIOR C.COM_ID = C.PARENT_COM_ID -->
+					select C.COM_ID from t_def_com C where FIND_IN_SET(C.COM_ID, queryChildrenNodeInfo(#{operComId}))
+					AND C.STATE='01'
+					
+    		)
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!="" and rolePrivilege=="2" '>
+    		AND A.OPER_COM_ID = #{operComId} 
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!="" and rolePrivilege=="1" '>
+    		AND (EXISTS(SELECT'X' FROM T_AGENT WHERE USER_ID = #{createUserId} AND AGENT_ID =A.AGENT_ID ) 
+    					OR A.CREATE_USER_ID = #{createUserId})
+    	</if>
+    	<!-- 权限控制结束 -->
+	</sql>
+    
+    <select id="getTradeFundsTotal" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT
+	COUNT(1)
+	FROM
+	t_trade_info a,
+	t_cust_base_info b,
+	t_trade_cust_info c,
+	t_pd_product d,
+	t_trade_product_info_view v,
+	t_agent e,
+	t_pd_wealth f
+	WHERE
+	a.TRADE_INFO_ID = c.TRADE_INFO_ID
+	AND b.CUST_BASE_INFO_ID =
+	c.CUST_BASE_INFO_ID
+	AND d.PRODUCT_ID = v.PRODUCT_ID
+	AND a.TRADE_INFO_ID =
+	v.TRADE_INFO_ID
+	AND b.AGENT_ID = e.AGENT_ID
+	AND a.TRADE_STAUS = '10'
+	AND
+	d.PRODUCT_SUB_TYPE in ('01','02')
+	AND d.PRODUCT_ID = f.PRODUCT_ID
+	AND
+	FUNC_FOUNDATE_CLOSED_ENDDATE(f.FOUND_DATE,
+	IFNULL((SELECT
+	x.CLOSE_DPERIOD
+	FROM t_pd_wealth_fee_rate x
+	where f.PD_WEALTH_ID =
+	x.PD_WEALTH_ID
+	and v.beneficialType = x.BENEFICIAL_TYPE
+	and x.RC_STATE =
+	'E'),f.CLOSE_DPERIODS),
+	f.CLOSE_DPERIOD_UNIT)>CURDATE()
+	<include refid="queryTradeListCondition" />
+	<include refid="queryTradeInfoListPrivilegeControl" />
+	AND a.RC_STATE = 'E'
+	AND b.RC_STATE = 'E'
+	AND c.RC_STATE = 'E'
+	AND
+	d.RC_STATE = 'E'
+	AND e.RC_STATE = 'E'
+	and f.RC_STATE = 'E'
+</select>
+    
+    <select id="getTradeFundsServiceList" parameterType="java.util.Map" resultType="java.util.Map">
+	select b.CHN_NAME 'custName',
+	a.TRADE_NO 'tradeNo',
+	a.TRADE_INFO_ID 'tradeInfoId',
+	a.TRADE_TYPE 'tradeType',
+	d.PRODUCT_NAME 'productName',
+	d.PRODUCT_SUB_TYPE 'productSubType',
+	ROUND(v.subscriptionFee,2) 'tradeTotalAsset',
+	e.AGENT_NAME 'agentName',
+	CASE
+					WHEN d.PRODUCT_SUB_TYPE = "01" OR d.PRODUCT_SUB_TYPE = "02"
+					THEN DATE_FORMAT(f.FOUND_DATE, "%Y-%m-%d")
+					ELSE
+					DATE_FORMAT(v.expectOpenDay, "%Y-%m-%d")
+					END  'tradeDate',
+	FUNC_GET_CODE_NAME('tradeStatus',a.TRADE_STAUS) 'tradeStausName'
+	FROM
+	t_trade_info a,
+	t_cust_base_info b,
+	t_trade_cust_info c,
+	t_pd_product d,
+	t_trade_product_info_view v,
+	t_agent e,
+	t_pd_wealth f
+	WHERE
+	a.TRADE_INFO_ID = c.TRADE_INFO_ID
+	AND b.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+	AND d.PRODUCT_ID = v.PRODUCT_ID
+	AND a.TRADE_INFO_ID = v.TRADE_INFO_ID
+	AND b.AGENT_ID = e.AGENT_ID
+	AND a.TRADE_STAUS = '10'
+	AND d.PRODUCT_SUB_TYPE in ('01','02')
+	AND d.PRODUCT_ID = f.PRODUCT_ID
+	AND FUNC_FOUNDATE_CLOSED_ENDDATE(f.FOUND_DATE,
+	IFNULL((SELECT x.CLOSE_DPERIOD
+	FROM t_pd_wealth_fee_rate x
+	where f.PD_WEALTH_ID = x.PD_WEALTH_ID
+	and v.beneficialType = x.BENEFICIAL_TYPE
+	and x.RC_STATE = 'E'),f.CLOSE_DPERIODS),
+	f.CLOSE_DPERIOD_UNIT)>CURDATE()
+	<include refid="queryTradeListCondition" />
+	<include refid="queryTradeInfoListPrivilegeControl" />
+	AND a.RC_STATE = 'E'
+	AND b.RC_STATE = 'E'
+	AND c.RC_STATE = 'E'
+	AND d.RC_STATE = 'E'
+	AND e.RC_STATE = 'E'
+	and f.RC_STATE = 'E'
+	LIMIT #{startIndex} , #{endIndex} 
+    </select>
+    <!-- 基金份额可受让列表页面查询条件 -->
+    <sql id="queryTradeTransFereeListCondition">
+    	<if test="custName != null and custName !=''" >
+      		AND D.CHN_NAME like '%${custName}%'
+    	</if>
+    	<if test="tradeInfoNo != null and tradeInfoNo !=''" >
+      		AND  a.ORIGIN_TRADE_NO LIKE '%${tradeInfoNo}%'
+    	</if>
+    	<if test="agentId != null and agentId !=''" >
+      		AND (A.IS_ORDER = '02' OR A.AGENT_ID = #{agentId})
+    	</if>
+    </sql>
+    <!-- 获取基金份额可受让总记录数 -->
+     <select id="getTradeFundsTransFereeTotal" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT
+				COUNT(1)
+				FROM
+              t_trade_funds_share_change a,t_trade_info B,t_pd_product C,
+              t_cust_base_info d,T_AGENT E,t_trade_cust_info f,t_trade_product_info_view G
+       where 
+              A.ORIGIN_AGENT_ID=E.AGENT_ID
+             AND A.ORIGIN_TRADE_INFO_ID=B.TRADE_INFO_ID
+             AND B.TRADE_INFO_ID=G.TRADE_INFO_ID
+             AND C.PRODUCT_ID=G.PRODUCT_ID
+             AND D.CUST_BASE_INFO_ID=F.CUST_BASE_INFO_ID
+             AND F.TRADE_INFO_ID=B.TRADE_INFO_ID
+             AND a.RC_STATE='E'
+             and b.RC_STATE='E'
+             and c.RC_STATE='E'
+             and d.RC_STATE='E'
+             and e.RC_STATE='E'
+             AND F.RC_STATE='E'
+			<include refid="queryTradeTransFereeListCondition"/>	
+    </select>
+    
+    <!-- 获取基金份额可受让总记录 -->
+      <select id="getTradeFundsTransFereeServiceList" parameterType="java.util.Map" resultType="java.util.Map">
+     select 
+               a.TRADE_FUNDS_SHARE_CHANGE_ID "tradeFundsShareChangeId",
+               (select b.TRADE_TYPE from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeType",
+               a.ORIGIN_AGENT_ID "orAgentId",
+               a.ORIGIN_TRADE_NO "orTradeNo",
+               a.ORIGIN_TRADE_INFO_ID "orTradeId",
+               a.TRADE_INFO_ID "tradeInfoId",
+               DATE_FORMAT(a.CREATE_DATE,"%Y-%m-%d") "createDate",
+               FUNC_GET_CODE_NAME("tradeStatus",a.TRADE_STATUS) "tradeStausName",
+               a.TRADE_STATUS "tradeStatus",
+               (case when a.TRANSFER_ALL='01' then '否'
+                      when a.TRANSFER_ALL='02' then '是' END) "changeType",
+               a.TRANSFER_ASSET "tradeTotalAsset",
+               e.AGENT_NAME "orAgentName",
+               c.PRODUCT_NAME "productName",
+               c.PRODUCT_ID "productId",
+               d.CUST_BASE_INFO_ID "custBaseInfoId",
+               d.CHN_NAME "transferCustName",
+               (
+	SELECT
+	x.CHN_NAME
+	FROM t_cust_base_info x,
+	t_trade_cust_info z
+	WHERE
+	x.CUST_BASE_INFO_ID= z.CUST_BASE_INFO_ID
+	AND a.TRADE_INFO_ID
+	= z.TRADE_INFO_ID
+	AND x.RC_STATE = 'E'
+	AND z.RC_STATE = 'E'
+	) "custName",
+	(select
+	b.AGENT_NAME
+	from t_agent b where
+	a.AGENT_ID=b.AGENT_ID) "agentName",
+               a.IS_ORDER "isOrder",
+               a.AGENT_ID "agentId"
+       from 
+              t_trade_funds_share_change a,t_trade_info B,t_pd_product C,
+              t_cust_base_info d,T_AGENT E,t_trade_cust_info f,t_trade_product_info_view G
+       where 
+              A.ORIGIN_AGENT_ID=E.AGENT_ID
+             AND A.ORIGIN_TRADE_INFO_ID=B.TRADE_INFO_ID
+             AND B.TRADE_INFO_ID=G.TRADE_INFO_ID
+             AND C.PRODUCT_ID=G.PRODUCT_ID
+             AND D.CUST_BASE_INFO_ID=F.CUST_BASE_INFO_ID
+             AND F.TRADE_INFO_ID=B.TRADE_INFO_ID
+             AND a.RC_STATE='E'
+             and b.RC_STATE='E'
+             and c.RC_STATE='E'
+             and d.RC_STATE='E'
+             and e.RC_STATE='E'
+             AND F.RC_STATE='E'
+	    <include refid="queryTradeTransFereeListCondition"/>
+		LIMIT #{startIndex} , #{endIndex} 
+    </select>
+    <!-- 获取转让产品基本信息 -->
+    <select id="getProductMapList" parameterType="java.util.Map" resultType="java.util.Map">
+    <!-- s -->
+		   select 
+                  a.PRODUCT_ID "productId",
+                  a.PRODUCT_CODE "productCode",
+                  a.PRODUCT_NAME "productName",
+                  CONCAT(a.PRODUCT_CODE,'-',a.PRODUCT_NAME) "proCodeName",
+                   a.PRODUCT_TYPE "productType",
+                   a.PRODUCT_SUB_TYPE "productSubType"
+                   from t_pd_product a
+                   where a.RC_STATE='E'
+                   and a.PRODUCT_ID=#{productId}
+    </select> 
+    
+    <select id="getTradeDetailInfo" parameterType="java.util.Map" resultType="java.util.Map">
+			     SELECT
+					A.trade_info_id "tradeInfoId",
+					A.TRADE_NO "tradeNo",
+					A.TRADE_TYPE "tradeType",
+					CASE a.trade_Type
+				WHEN 2 THEN
+					(
+						SELECT
+							max(c.CHN_NAME)
+						FROM
+							T_TRADE_CUST_ROLE_INFO b,
+							T_CUST_BASE_INFO c,
+							t_trade_cust_info d
+						WHERE
+							D.TRADE_INFO_ID = a.TRADE_INFO_ID
+						AND D.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+						AND b.trade_cust_info_id = d.trade_cust_info_id
+						AND b.role_type = '1'
+						AND b.rc_state = 'E'
+						AND c.rc_state = 'E'
+						AND d.rc_state = 'E'
+					)
+				WHEN 1 THEN
+					(
+						SELECT
+							c.CHN_NAME
+						FROM
+							t_trade_cust_info b,
+							T_CUST_BASE_INFO c
+						WHERE
+							b.TRADE_INFO_ID = a.TRADE_INFO_ID
+						AND b.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+						AND b.rc_state = 'E'
+						AND c.rc_state = 'E'
+					)
+				END "custName",
+				A.TRADE_INFO_NO "tradeInfoNo",
+				DATE_FORMAT(A.TRADE_DATE, '%Y-%m-%d') "tradeDate",
+				(
+					SELECT
+						concat(
+							group_concat(e.product_name),
+							''
+						)
+					FROM
+						t_trade_product_info_view d,
+						t_pd_product e
+					WHERE
+						d.TRADE_INFO_ID = a.trade_info_id
+					AND d.PRODUCT_ID = e.product_id
+				) "productName",
+				(
+					SELECT
+						agent_name
+					FROM
+						t_agent
+					WHERE
+						agent_id = a.agent_id
+				) "agentName",
+				A.TRADE_TOTAL_ASSETS "tradeTotalAsset",
+				a.trade_staus "tradeStaus"
+			FROM
+				T_TRADE_INFO A
+			WHERE
+				1 = 1
+			AND RC_STATE = 'E'
+			AND A.TRADE_INFO_ID = #{tradeInfoId}
+    </select>
+    <!-- 转让审核列表查询条件 -->
+    <sql id="queryTransferAuditCondition">
+	    <if test="custName != null and custName !=''">
+		   AND EXISTS(SELECT 'X' FROM T_TRADE_CUST_INFO B,T_CUST_BASE_INFO C
+                        WHERE B.TRADE_INFO_ID = A.TRADE_INFO_ID AND B.CUST_BASE_INFO_ID = C.CUST_BASE_INFO_ID
+                        AND B.RC_STATE = 'E' AND C.CHN_NAME LIKE '%${custName}%')
+	    </if>
+    </sql>
+	<!-- 转让审核列表总数 -->
+	<select id="queryTransferAuditListCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select count(1) from t_trade_funds_share_change a
+		where a.RC_STATE='E'
+		AND A.TRADE_STATUS IN('12','13')
+		<include refid="queryTransferAuditCondition"/>
+	</select>
+	<!-- 转让审核列表 -->
+	<select id="queryTransferAuditList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+	select
+	a.TRADE_FUNDS_SHARE_CHANGE_ID
+	"tradeFundsShareChangeId",
+	a.ORIGIN_TRADE_INFO_ID "originTradeInfoId",
+	a.TRADE_INFO_ID
+	"tradeInfoId",
+	(select b.TRADE_NO from t_trade_info b where b.TRADE_INFO_ID=a.TRADE_INFO_ID)
+	"tradeNo",
+	(select b.TRADE_TYPE from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeType",
+	(select b.TRADE_INPUT_DATE from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeInputDate",
+	(select b.COMPANY_ID from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "companyId",
+	(select b.TRADE_COM_ID from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeComId",
+	(select b.TRADE_INFO_NO from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeInfoNo",
+	(select b.TRADE_DATE from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeDate",
+	(select b.CURRENCY from t_trade_info b where b.TRADE_INFO_ID=a.TRADE_INFO_ID)
+	"currency",
+	(
+	SELECT
+	x.CHN_NAME
+	FROM t_cust_base_info x,
+	t_trade_cust_info z
+	WHERE
+	x.CUST_BASE_INFO_ID= z.CUST_BASE_INFO_ID
+	AND a.ORIGIN_TRADE_INFO_ID
+	= z.TRADE_INFO_ID
+	AND x.RC_STATE = 'E'
+	AND z.RC_STATE = 'E'
+	) "transferCustName",
+	(
+	SELECT
+	x.CHN_NAME
+	FROM t_cust_base_info x,
+	t_trade_cust_info z
+	WHERE
+	x.CUST_BASE_INFO_ID= z.CUST_BASE_INFO_ID
+	AND a.TRADE_INFO_ID
+	= z.TRADE_INFO_ID
+	AND x.RC_STATE = 'E'
+	AND z.RC_STATE = 'E'
+	) "custName",
+	a.ORIGIN_AGENT_ID "originAgentId",
+	(select b.AGENT_NAME from t_agent b
+	where
+	a.ORIGIN_AGENT_ID=b.AGENT_ID)
+	"originAgentName",
+	a.AGENT_ID "agentId",
+	(select
+	b.AGENT_NAME
+	from t_agent b where
+	a.AGENT_ID=b.AGENT_ID) "agentName",
+	(select
+	d.PRODUCT_ID from t_pd_product d,t_trade_product_info_view e
+	where
+	d.PRODUCT_ID=e.PRODUCT_ID and a.TRADE_INFO_ID=e.TRADE_INFO_ID
+	and
+	d.RC_STATE='E') "productId",
+	(select
+	d.PRODUCT_NAME from t_pd_product
+	d,t_trade_product_info_view e
+	where
+	d.PRODUCT_ID=e.PRODUCT_ID and
+	a.TRADE_INFO_ID=e.TRADE_INFO_ID
+	and
+	d.RC_STATE='E') "productName",
+	a.TRANSFER_ASSET "tradeTotalAsset",
+	(case when a.TRANSFER_ALL='01' then '否'
+	when a.TRANSFER_ALL='02' then '是' END) "changeType",
+	DATE_FORMAT(a.CREATE_DATE,'%Y-%m-%d') "createDate",
+	a.VALUE_DATE
+	"valueDate",
+	FUNC_GET_CODE_NAME('tradeStatus',A.TRADE_STATUS)
+	"tradeStausName",
+	A.TRADE_STATUS "tradeStatus"
+	from
+	t_trade_funds_share_change a
+	where
+	a.TRADE_STATUS IN('12','13')
+	and a.RC_STATE='E'
+	<include refid="queryTransferAuditCondition"/>
+	LIMIT #{startIndex} , #{endIndex}
+	</select>
+	<select id="getCustLevel" parameterType="java.util.Map"
+		resultType="java.util.Map">
+	SELECT
+	a.cust_base_info_id "custBaseInfoId",
+	a.cust_level "custLevel"
+	FROM
+	t_cust_base_info a,
+	t_trade_info b,
+	t_trade_cust_info c
+	where 1=1
+	and a.cust_base_info_id = c.cust_base_info_id
+	and b.trade_info_id = c.trade_info_id
+	and b.trade_info_id = #{tradeInfoId}
+	and a.rc_state = "E"
+	and b.rc_state = "E"
+	AND c.RC_STATE = "E"
+	</select>
+	
+	 <!-- 获取基金份额可受让总记录 -->
+      <select id="getTradeFundsTransFereeServiceListTotal" parameterType="java.util.Map" resultType="java.util.Map">
+     select 
+               a.TRADE_FUNDS_SHARE_CHANGE_ID "tradeFundsShareChangeId",
+               (select b.TRADE_TYPE from t_trade_info b where
+	b.TRADE_INFO_ID=a.TRADE_INFO_ID) "tradeType",
+               a.ORIGIN_AGENT_ID "orAgentId",
+               a.ORIGIN_TRADE_NO "orTradeNo",
+               a.ORIGIN_TRADE_INFO_ID "orTradeId",
+               a.TRADE_INFO_ID "tradeInfoId",
+               DATE_FORMAT(a.CREATE_DATE,"%Y-%m-%d") "createDate",
+               FUNC_GET_CODE_NAME("tradeStatus",a.TRADE_STATUS) "tradeStausName",
+               a.TRADE_STATUS "tradeStatus",
+               (case when a.TRANSFER_ALL='01' then '否'
+                      when a.TRANSFER_ALL='02' then '是' END) "changeType",
+               a.TRANSFER_ASSET "tradeTotalAsset",
+               e.AGENT_NAME "orAgentName",
+               c.PRODUCT_NAME "productName",
+               c.PRODUCT_ID "productId",
+               d.CUST_BASE_INFO_ID "custBaseInfoId",
+               d.CHN_NAME "transferCustName",
+               (
+	SELECT
+	x.CHN_NAME
+	FROM t_cust_base_info x,
+	t_trade_cust_info z
+	WHERE
+	x.CUST_BASE_INFO_ID= z.CUST_BASE_INFO_ID
+	AND a.TRADE_INFO_ID
+	= z.TRADE_INFO_ID
+	AND x.RC_STATE = 'E'
+	AND z.RC_STATE = 'E'
+	) "custName",
+	(select
+	b.AGENT_NAME
+	from t_agent b where
+	a.AGENT_ID=b.AGENT_ID) "agentName",
+               a.IS_ORDER "isOrder",
+               a.AGENT_ID "agentId"
+       from 
+              t_trade_funds_share_change a,t_trade_info B,t_pd_product C,
+              t_cust_base_info d,T_AGENT E,t_trade_cust_info f,t_trade_product_info_view G
+       where 
+              A.ORIGIN_AGENT_ID=E.AGENT_ID
+             AND A.ORIGIN_TRADE_INFO_ID=B.TRADE_INFO_ID
+             AND B.TRADE_INFO_ID=G.TRADE_INFO_ID
+             AND C.PRODUCT_ID=G.PRODUCT_ID
+             AND D.CUST_BASE_INFO_ID=F.CUST_BASE_INFO_ID
+             AND F.TRADE_INFO_ID=B.TRADE_INFO_ID
+             AND a.RC_STATE='E'
+             and b.RC_STATE='E'
+             and c.RC_STATE='E'
+             and d.RC_STATE='E'
+             and e.RC_STATE='E'
+             AND F.RC_STATE='E'
+	    <include refid="queryTradeTransFereeListCondition"/>
+    </select>
+</mapper>

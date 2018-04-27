@@ -1,0 +1,2503 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.SalesServiceMapper" >
+	<sql id="queryAgentListCondition">
+		<if test="agentCode != null and agentCode !=''" >
+      		 AND A.AGENT_CODE like '%${agentCode}%'
+    	</if>
+  		<if test="agentId != null and agentId !=''" >
+      		AND A.AGENT_ID = #{agentId}
+    	</if>
+    	<if test="chnName != null and chnName !=''" >
+      		AND A.AGENT_NAME like '%${chnName}%'
+    	</if>
+    	<if test="comId != null and comId !=''" >
+      		AND A.COM_ID = #{comId}
+    	</if>
+    	<!-- <if test="storeId != null and storeId !=''" >
+      		AND A.STORE_ID = #{storeId}
+    	</if> -->
+    	<if test="departmentId != null and departmentId !=''" >
+      		AND A.DEPARTMENT_ID = #{departmentId}
+    	</if>
+    	<if test="workState != null and workState !=''" >
+      		AND A.WORK_STATE = #{workState}
+    	</if>
+    	<if test="joinDateBegin != null and joinDateBegin !=''" >
+      		AND A.JOIN_DATE <![CDATA[>=]]> date'${joinDateBegin}'
+    	</if>
+    	<if test="joinDateEnd != null and joinDateEnd !=''" >
+      		AND A.JOIN_DATE <![CDATA[<=]]> date'${joinDateEnd}'
+    	</if>
+    	<if test="positionCode != null and positionCode !=''" >
+    	
+    	<!--F-->
+    	
+    		AND (SELECT B.POSITION_CODE FROM T_AGENT_POSITION_TRACE B WHERE B.AGENT_ID = A.AGENT_ID AND B.RC_STATE = 'E'  
+      					AND B.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE C 
+      						WHERE C.AGENT_ID = B.AGENT_ID AND C.RC_STATE='E') AND @ROWNUM :=@rownum+1)= #{positionCode}
+    	</if>
+    	<if test="gradeCode != null and gradeCode !=''" >
+    	
+    	<!--F-->
+    	
+    		AND (SELECT B.GRADE_CODE FROM T_AGENT_POSITION_TRACE B WHERE B.AGENT_ID = A.AGENT_ID AND B.RC_STATE = 'E'  
+                AND B.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE C 
+                  WHERE C.AGENT_ID = B.AGENT_ID AND C.RC_STATE='E') AND @ROWNUM :=@rownum+1) = #{gradeCode}
+    	</if>
+    	
+  	</sql>
+
+	<sql id="queryAgentListPermissionControl">
+		<!-- 以下是查询权限控制 3-本机构及下属机构数据，2-本机构数据，1-本人数据-->
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="3"'>
+    	
+    	  <!--S-->
+    	  
+   			AND A.COM_ID IN(
+   				<!-- SELECT C.COM_ID
+				FROM T_DEF_COM C 
+				WHERE C.RC_STATE = 'E'
+					AND C.STATE='01'
+					START WITH C.COM_ID = #{operComId} CONNECT BY PRIOR C.COM_ID = C.PARENT_COM_ID -->
+					
+					select C.COM_ID from t_def_com C 
+					where FIND_IN_SET(C.COM_ID, queryChildrenNodeInfo(#{operComId})) and C.RC_STATE = 'E'
+					AND C.STATE='01'
+   			)
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="2" '>
+    		AND A.COM_ID = #{operComId} 
+    	</if>
+    	<if test='rolePrivilege!=null and rolePrivilege!=null and rolePrivilege=="1" '>
+    		AND A.CREATE_USER_ID = #{createUserId} 
+    	</if>
+    	<!-- 权限控制结束 -->
+  	</sql>
+
+
+	<select id="findAgentBelongCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+			select count(1) FROM
+				t_agent a,
+				t_cust_belong_operation b,
+				t_def_store c,
+				t_def_com d
+			WHERE 
+			a.AGENT_ID = b.agent_id
+				AND a.RC_STATE= "E"
+				AND
+			  a.STORE_ID = c.STORE_ID
+				AND b.RC_STATE = "E"
+				AND	
+				c.COM_ID = d.COM_ID
+				AND c.RC_STATE = "E"
+	</select>
+
+
+	<select id="findAgentBelongList" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT
+			a.AGENT_CODE "agentCode",
+			a.AGENT_NAME "agentName",
+			c.STORE_NAME  "storeName",
+			d.COM_NAME "comName",
+			date_format(b.belong_start_date,'%Y-%m-%d %H:%i:%S') "belongStartDate",
+			date_format(b.belong_end_date,'%Y-%m-%d %H:%i:%S') "belongEndDate",
+			(select DATEDIFF(CURDATE(),a.JOIN_DATE) )	"serverDate",
+			(SELECT COUNT(1) FROM T_TRADE_INFO D,T_TRADE_CUST_INFO E,t_cust_base_info G 
+							     WHERE D.TRADE_INFO_ID = E.TRADE_INFO_ID 
+							           AND E.CUST_BASE_INFO_ID = G.CUST_BASE_INFO_ID
+												 AND a.AGENT_ID = G.CUST_BASE_INFO_ID
+							           AND D.TRADE_STAUS IN('11','10')
+							           AND D.RC_STATE = 'E' AND E.RC_STATE = 'E')"signTimes",
+			 (select t.USER_NAME from t_def_user t WHERE t.USER_ID = b.USER_ID ) as "operator",
+			date_format(b.adjust_date,'%Y-%m-%d %H:%i:%S') "adjustDate",
+			b.adjust_cause "adjustCause",
+			"附件" as "附件"
+		FROM
+			t_agent a,
+			t_cust_belong_operation b,
+			t_def_store c,
+			t_def_com d
+		WHERE
+			a.AGENT_ID = b.agent_id
+			AND a.RC_STATE= "E"
+			AND
+		  a.STORE_ID = c.STORE_ID
+			AND b.RC_STATE = "E"
+			AND	
+			c.COM_ID = d.COM_ID
+			AND c.RC_STATE = "E"
+		LIMIT #{startIndex} , #{endIndex} 
+	</select>
+
+	<select id="queryAgentList" resultType="java.util.Map" parameterType="java.util.Map">
+	
+	<!--s-->
+	
+		select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+         		SELECT (SELECT @rownum := 0),
+         		    A.AGENT_ID "agentId",A.AGENT_CODE "agentCode", A.AGENT_NAME "agentName",A.MOBILE "mobile",A.IDNO "idNo",
+       				A.COM_ID "comId",(SELECT COM_NAME FROM T_DEF_COM WHERE COM_ID = A.COM_ID) "comName",
+       				<!-- A.STORE_ID "storeId",(SELECT STORE_NAME FROM T_DEF_STORE WHERE STORE_ID = A.STORE_ID) "storeName", -->
+       				A.DEPARTMENT_ID "departmentId",
+       				(SELECT DEPARTMENT_NAME FROM T_DEF_DEPARTMENT WHERE DEPARTMENT_ID = A.DEPARTMENT_ID) "departmentName",
+       				A.WORK_STATE "workState",FUNC_GET_CODE_NAME('workState',A.WORK_STATE) "workStateName",
+       				DATE_FORMAT(A.JOIN_DATE,'%Y-%m-%d') "joinDate",
+       				(SELECT B.POSITION_CODE FROM T_AGENT_POSITION_TRACE B WHERE B.AGENT_ID = A.AGENT_ID AND B.RC_STATE = 'E'  
+      					AND B.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE C 
+      						WHERE C.AGENT_ID = B.AGENT_ID AND C.RC_STATE='E') AND @ROWNUM :=1) "positionCode",
+       				(SELECT FUNC_GET_CODE_NAME('positionCode',B.POSITION_CODE) FROM T_AGENT_POSITION_TRACE B WHERE B.AGENT_ID = A.AGENT_ID AND B.RC_STATE = 'E'  
+      					AND B.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE C 
+      						WHERE C.AGENT_ID = B.AGENT_ID AND C.RC_STATE='E') AND @ROWNUM :=1)"positionCodeName",
+      				(SELECT B.GRADE_CODE FROM T_AGENT_POSITION_TRACE B WHERE B.AGENT_ID = A.AGENT_ID AND B.RC_STATE = 'E'  
+      					AND B.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE C 
+      						WHERE C.AGENT_ID = B.AGENT_ID AND C.RC_STATE='E') AND @ROWNUM :=1) "gradeCode",
+      				(SELECT
+							FUNC_GET_CODE_NAME ('gradeCode', B.GRADE_CODE)
+						FROM
+							T_AGENT_POSITION_TRACE B
+						WHERE
+							B.AGENT_ID = A.AGENT_ID
+						AND B.RC_STATE = 'E'
+						AND B.START_DATE = (
+							SELECT
+								MAX(START_DATE)
+							FROM
+								T_AGENT_POSITION_TRACE C
+							WHERE
+								C.AGENT_ID = B.AGENT_ID
+                            AND C.START_DATE<![CDATA[<]]>(SELECT now())
+							AND C.RC_STATE = 'E'
+						)   
+						AND @ROWNUM :=1
+					) "gradeCodeName"
+				FROM T_AGENT A
+				WHERE 1=1 
+				AND A.RC_STATE = 'E'
+				<include refid="queryAgentListCondition"/>
+				<include refid="queryAgentListPermissionControl"/>
+				order by A.AGENT_ID desc
+ 			) nAlias
+		) tAlias where r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+ 	</select>
+ 	
+ 	<select id="queryAgentListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_AGENT A
+			WHERE 1=1 
+			AND A.RC_STATE = 'E'
+		<include refid="queryAgentListCondition"/>
+		<include refid="queryAgentListPermissionControl"/>
+		
+    </select>
+    
+    <select id="getAgentFamilyInfoList" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT A.FAMILY_ID "familyId",A.MEMBER_NAME "memberName",A.RELATION_TO_AGENT "relationToAgent",
+       		CONCAT(A.RELATION_TO_AGENT,'-',FUNC_GET_CODE_NAME('relationToAgent',A.RELATION_TO_AGENT)) "relationToAgentName",A.AGE "age",
+       		A.OCCUPATION_CODE "occupationCode",CONCAT(A.OCCUPATION_CODE,'-',FUNC_GET_CODE_NAME('occupation',A.OCCUPATION_CODE)) "occupationName",
+       		A.INCOME_VALUE "incomeValue",A.MOBILE "mobile",A.EMAIL "email",A.QQ "qq",A.WECHAT "wechat"
+		FROM T_AGENT_FAMILY_INFO A
+		WHERE 1 = 1
+			AND A.AGENT_ID = #{agentId}
+			AND A.RC_STATE = 'E'
+    </select>
+    
+    <select id="getAgentCertificationInfoList" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT A.CERTIFICATION_ID "certificationId",A.CERTIFICATION_TYPE "certificationType",
+			   CONCAT(A.CERTIFICATION_TYPE,'-',FUNC_GET_CODE_NAME('certificationType',A.CERTIFICATION_TYPE)) "certificationName", 
+			   A.CERTIFICATION_CODE "certificationCode"
+		FROM T_AGENT_CERTIFICATION_INFO A
+		WHERE 1 = 1
+			AND A.AGENT_ID = #{agentId}
+			AND A.RC_STATE = 'E'
+    </select>
+    
+    
+    <select id="getAgentPositionTraceInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT A.BLPOSITION_ID "blpositionId",A.POSITION_CODE "positionCode",
+	      CONCAT(A.POSITION_CODE,'-',FUNC_GET_CODE_NAME('positionCode',A.POSITION_CODE))  "positionCodeName",
+	       A.GRADE_CODE "gradeCode", CONCAT(A.GRADE_CODE,'-',FUNC_GET_CODE_NAME('gradeCode',A.GRADE_CODE)) "gradeCodeName",
+	       DATE_FORMAT(A.START_DATE,'%Y-%m-%d') "startDate",
+         DATE_FORMAT(A.END_DATE,'%Y-%m-%d') "endDate"
+		FROM T_AGENT_POSITION_TRACE A
+		WHERE A.AGENT_ID = #{agentId}
+		AND A.RC_STATE = 'E'
+    </select>
+    
+    <select id="getAgentNurserInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT A.AGENT_NURSER_INFO_ID "agentNurserInfoId",A.NURSER_AGENT_ID "nurserAgentId",
+	         B.AGENT_CODE "nurserAgentCode",B.AGENT_NAME "nurserAgentName",
+	         DATE_FORMAT(A.START_DATE,'%Y-%m-%d') "startDate",
+	         DATE_FORMAT(A.END_DATE,'%Y-%m-%d') "endDate"
+	    FROM T_AGENT_NURSER_INFO A,T_AGENT B
+			WHERE A.AGENT_ID = #{agentId}
+	    AND A.NURSER_AGENT_ID = B.AGENT_ID
+			AND A.RC_STATE = 'E'
+    </select>
+    
+    <select id="getAgentWorkInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT A.AGENT_WORK_INFO_ID "agentWorkInfoId",A.OCCUPATION "occupation",
+	         CONCAT(A.OCCUPATION,'-',FUNC_GET_CODE_NAME('agentOccupation',A.OCCUPATION))"occupationName",
+	         A.SUB_OCCUPATION "subOccupation",
+	         CONCAT(A.SUB_OCCUPATION,'-',FUNC_GET_CODE_NAME('agentSubOccupation',A.SUB_OCCUPATION))"subOccupationName",
+	         A.DUTIES "duties",
+	         CONCAT(A.DUTIES,'-',FUNC_GET_CODE_NAME('agentDuties',A.DUTIES))"dutiesName",
+	         A.RANK "rank",
+	         CONCAT(A.RANK,'-',FUNC_GET_CODE_NAME('agentRank',A.RANK))"rankName",
+	         DATE_FORMAT(A.START_DATE,'%Y-%m-%d') "startDate",
+	         DATE_FORMAT(A.END_DATE,'%Y-%m-%d') "endDate"
+	    FROM T_AGENT_WORK_INFO A
+			WHERE A.AGENT_ID = #{agentId}
+			AND A.RC_STATE = 'E'
+    </select>
+    
+<!--     <select id="getAgentStoreTraceInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    s
+    
+		SELECT B.BELONG_STORE_ID "belongStoreId",A.COM_ID "comId",
+       		(SELECT CONCAT(COM_CODE,'-',COM_NAME) FROM T_DEF_COM WHERE COM_ID = A.COM_ID AND RC_STATE = 'E')"comName",
+       		B.STORE_ID "storeId",
+       		(SELECT CONCAT(STORE_CODE,'-',STORE_NAME) FROM T_DEF_STORE WHERE STORE_ID = B.STORE_ID AND RC_STATE = 'E')"storeName",   
+           	DATE_FORMAT(B.START_DATE,'%Y-%m-%d') "startDate",
+           	DATE_FORMAT(B.END_DATE,'%Y-%m-%d') "endDate"
+    	FROM T_AGENT A,T_AGENT_STORE B
+      	WHERE 1 = 1
+        	AND A.AGENT_ID = B.AGENT_ID
+       	 	AND A.AGENT_ID = #{agentId}
+        	AND A.RC_STATE = 'E'
+        	AND B.RC_STATE = 'E'
+    </select> -->
+    
+    
+    <select id="getAgentDepartmentTraceInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT B.BLDEPARTMENT_ID "bldepartmentId",
+       A.COM_ID "comId",
+       (SELECT CONCAT(COM_CODE,'-',COM_NAME)
+          FROM T_DEF_COM
+         WHERE COM_ID = A.COM_ID
+           AND RC_STATE = 'E') "comName",
+       B.DEPARTMENT_ID "departmentId",
+       (SELECT CONCAT(DEPARTMENT_CODE,'-',C.DEPARTMENT_NAME)
+          FROM T_DEF_DEPARTMENT C
+         WHERE DEPARTMENT_ID = B.DEPARTMENT_ID
+           AND RC_STATE = 'E') "departmentName",
+       DATE_FORMAT(B.START_DATE, '%Y-%m-%d') "startDate",
+       DATE_FORMAT(B.END_DATE, '%Y-%m-%d') "endDate",
+       b.isleader "isLeader",
+       (select code_name
+          from t_def_code t
+         where t.code_type = 'isLeader'
+           and t.code = b.isleader) "isLeaderName"
+  FROM T_AGENT A, T_AGENT_DEPARTMENT B
+ WHERE 1 = 1
+   AND A.AGENT_ID = B.AGENT_ID
+   AND A.AGENT_ID = #{agentId}
+   AND A.RC_STATE = 'E'
+   AND B.RC_STATE = 'E'
+    </select>
+    <select id="getAgentOtherInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+		SELECT 
+		B.AGENT_OTHER_INFO_ID 'otherInfoId',
+		B.CONTRACT_START_DATE 'contractStartDate',
+		B.CONTRACT_END_DATE 'contractEndDate',
+		B.HALFYEAR_TEST_RANK 'halfyearTestRank',
+		B.FINAL_TEST_RANK 'finalTestRank'
+  FROM T_AGENT A, T_AGENT_OTHER_INFO B
+ WHERE 1 = 1
+   AND A.AGENT_ID = B.AGENT_ID
+   AND A.AGENT_ID = #{agentId}
+   AND A.RC_STATE = 'E'
+   AND B.RC_STATE = 'E'
+    </select>
+    <!-- 查询某个月薪资结算的所有交易状态为承保/成立的单子 -->
+    <select id="getFoundStatusInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+  select a.trade_info_id "tradeInfoId", b.actu_premium "actuPremium"
+    from t_trade_info a, t_trade_status_info b
+   where a.trade_info_id = b.trade_info_id
+     and a.trade_staus in ('06','08')
+     and a.trade_type = '2'
+     and a.rc_state = 'E'
+     and b.rc_state = 'E'
+     and DATE_FORMAT(b.status_date,'%Y%m') = ${calDate}
+   union all
+  select a.trade_info_id            "tradeInfoId",
+         b.actu_subscription_amount "actuPremium"
+    from t_trade_info              a,
+         t_trade_status_info       b,
+         t_trade_product_info_view c,
+         t_pd_product              f
+   where a.trade_info_id = b.trade_info_id
+     and a.trade_staus = '10'
+     and a.trade_info_id = c.TRADE_INFO_ID
+     and a.rc_state = 'E'
+     and b.rc_state = 'E'
+     and a.trade_type = '1'
+     and f.rc_state = 'E'
+     and c.product_id = f.product_id
+     and f.product_sub_type in ('03', '01')
+     and f.product_type = '1'
+     and CONCAT(substring(expectOpenDay, 0, 4),substring(expectOpenDay, 6, 2)) =
+         #{calDate}
+ union all
+  select a.trade_info_id            "tradeInfoId",
+         b.actu_subscription_amount "actuPremium"
+    from t_trade_info              a,
+         t_trade_status_info       b,
+         t_trade_product_info_view c,
+         t_pd_product              f,
+         t_pd_wealth               g
+   where a.trade_info_id = b.trade_info_id
+     and a.trade_staus = '10'
+     and a.trade_info_id = c.TRADE_INFO_ID
+     and a.rc_state = 'E'
+     and b.rc_state = 'E'
+     and a.trade_type = '1'
+     and f.rc_state = 'E'
+     and c.product_id = f.product_id
+     and f.product_sub_type = '02'
+     and f.product_type = '1'
+     and f.product_id = g.product_id
+     and g.rc_state = 'E'
+     and DATE_FORMAT(g.found_date, '%Y%m') = ${calDate}
+    </select>
+    <!-- 查询某个月所有交易状态为犹撤并且是已经结转的单子 -->
+    <select id="getRebackStatusInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+	select a.trade_info_id "tradeInfoId"
+	from t_trade_status_info a, t_agent_wage b
+	where a.trade_status = '08'
+	and a.rc_state = 'E'
+	and b.rc_state='E'
+	and a.trade_info_id =b.tradeinfo_id
+	and b.wage_state='2'
+	and DATE_FORMAT(a.status_date,'%Y%m') = #{calDate}
+    </select>
+    
+    <!--更新薪资明细表的状态 -->
+    <update id="updateAgentWage" parameterType="java.util.Map" >
+    
+     <!--s-->
+     
+	update t_agent_wage a
+	set a.wage_state = '2',a.forward_date=STR_TO_DATE(#{fowarddate},'%Y-%m-%d')
+	where a.rc_state = 'E'
+	and a.cal_month = ${calMonth}
+	and a.cal_year = ${calYear}
+	and a.wage_count=${wageCount}
+	and a.wage_state='1' 
+    </update>
+    
+    <!--更新考核明细表的状态 -->
+    <update id="updateAgentAssess" parameterType="java.util.Map" >
+    
+     <!--s-->
+     
+  update t_agent_assess a
+  set a.assess_status = '2',a.assess_fowarddate=STR_TO_DATE(#{assessFowarddate},'%Y-%m-%d')
+  where a.rc_state = 'E'
+  and  a.assess_year = ${assessYear}
+  and  a.assess_month = ${assessMonth}
+	and  a.assess_unit=#{assessUnit}
+	and a.assess_count=${assessCount}
+	and a.assess_status='1'
+    </update>
+    
+    <!-- 薪资管理页面查询条件 -->
+	<sql id="salaryQueryListCondition">
+		<if test='calYear!= null and calYear!=""'>
+			AND A.CAL_YEAR = #{calYear}
+		</if>
+		<if test='calMonth!= null and calMonth!=""'>
+			AND A.CAL_MONTH = #{calMonth}
+		</if>
+		<if test='wageState!= null and wageState!=""'>
+			AND A.STATE = #{wageState}
+		</if>
+  </sql>
+  <!-- 薪资管理页面查询总条数-->
+  <select id="salaryQueryListCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+	select count(1)
+	from t_agent_wage_info a
+	where 1 = 1
+	and a.rc_state = 'E'
+	<include refid="salaryQueryListCondition"/>
+  </select>
+  <!-- 薪资管理查询脚本 -->
+	<select id="salaryQueryListPage" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	<!--s-->
+	select tAlias.*
+	from (select nAlias.*, @rownum:=@rownum+1  r_rownum
+	from (SELECT (SELECT @rownum := 0),
+	a.cal_year "calYear",
+	a.cal_month "calMonth",
+	a.state "stateCode",
+	(select b.code_name
+	from t_def_code b
+	where b.code = a.state
+	and b.code_type = 'wageState') "state",
+	DATE_FORMAT(a.settle_date, '%Y-%m-%d') "settleDate",
+	DATE_FORMAT(a.forward_date, '%Y-%m-%d') "forwardDate",
+	a.wage_sum_money "wageSumMoney"
+	from t_agent_wage_info a
+	where a.rc_state = 'E'
+	<include refid="salaryQueryListCondition" />
+	) nAlias) tAlias
+	where r_rownum >= #{startIndex}
+	and #{endIndex} >=
+	r_rownum	
+	</select>
+	
+    <!-- 薪资查询页面查询条件 -->
+	<sql id="agentWageQueryListCondition">
+		<if test='comId!= null and comId!=""'>
+			AND a.COM_ID = #{comId}
+		</if>
+		<if test='storeId!= null and storeId!=""'>
+			AND a.STORE_ID = #{storeId}
+		</if>
+		<if test='agentId!= null and agentId!=""'>
+			AND a.agent_ID = #{agentId}
+		</if>
+		<if test='departmentId!= null and departmentId!=""'>
+			AND a.DEPARTMENT_ID = #{departmentId}
+		</if>
+		<if test='calYear!= null and calYear!=""'>
+			AND a.CAL_YEAR = #{calYear}
+		</if>
+		<if test='calMonth!= null and calMonth!=""'>
+			AND a.CAL_MONTH = #{calMonth}
+		</if>
+		<if test='positionCode!= null and positionCode!=""'>
+		
+		  <!--F-->
+		  
+			AND(SELECT c.POSITION_CODE FROM T_AGENT_POSITION_TRACE c 
+                  WHERE c.AGENT_ID = a.AGENT_ID AND c.RC_STATE = 'E'  
+      					AND c.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE d 
+      						WHERE d.AGENT_ID = a.AGENT_ID AND d.RC_STATE='E') AND @ROWNUM :=@rownum+1)=#{positionCode}
+		</if>
+		<if test='gradeCode!= null and gradeCode!=""'>
+		
+		  <!--F-->
+		  
+			(SELECT c.grade_code FROM T_AGENT_POSITION_TRACE c 
+                  WHERE c.AGENT_ID = a.AGENT_ID AND c.RC_STATE = 'E'  
+      					AND c.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE d 
+      						WHERE d.AGENT_ID = a.AGENT_ID AND d.RC_STATE='E') AND @ROWNUM :=@rownum+1)=#{gradeCode}
+		</if>
+  </sql>
+  <!-- 薪资查询页面查询总条数-->
+  <select id="agentWageListCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+	select count(1)
+	from t_agent_wage a
+	where 1 = 1
+	and a.rc_state = 'E'
+	<include refid="agentWageQueryListCondition"/>
+  </select>
+	
+  <!-- 薪资查询页面查询脚本 -->
+   <select id="agentWageListPage" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		
+<!--s-->
+	select tAlias.*
+	from (select nAlias.*, @rownum:=@rownum+1 r_rownum
+	from (select
+	distinct
+	(SELECT @rownum := 0),
+	a.department_id "departmentId",
+	(select dp.department_name
+	from
+	t_Def_Department dp
+	where dp.department_id = a.department_id
+	and
+	dp.rc_state = 'E'
+	and dp.state = '1') "departmentName",
+	a.store_id
+	"storeId",
+	(select ds.store_name
+	from t_def_store ds
+	where ds.store_id = a.store_id
+	and ds.rc_state = 'E'
+	and ds.state = '01') "storeName",
+	a.com_id "comId",
+	(select dc.com_name
+	from t_def_com dc
+	where dc.com_id = a.com_id
+	and dc.rc_state = 'E'
+	and dc.state = '01') "comName",
+	a.agent_id "agentId",
+	(select ta.agent_name
+	from t_agent ta
+	where ta.agent_id = a.agent_id
+	and ta.rc_state = 'E'
+	and ta.work_state = '1') "agentName",
+	(select td.code_name
+	from t_agent_position_trace tp, t_def_code td
+	where tp.agent_id = a.agent_id
+	and tp.rc_state = 'E'
+	and td.code = (SELECT c.POSITION_CODE FROM T_AGENT_POSITION_TRACE c
+	WHERE c.AGENT_ID = A.AGENT_ID AND c.RC_STATE = 'E'
+	AND c.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE d
+	WHERE d.AGENT_ID = A.AGENT_ID AND d.RC_STATE='E') AND @ROWNUM :=@rownum+1)
+	and td.code_type = 'positionCode') "positionName",
+	(select td.code_name
+	from t_agent_position_trace tp, t_def_code td
+	where tp.agent_id = a.agent_id
+	and tp.rc_state = 'E'
+	and td.code = tp.grade_code
+	and td.code_type = 'gradeCode') "gradeName",
+	a.cal_year "calYear",
+	a.cal_month "calMonth",
+	(select sum(b.wage_value)
+	from t_Agent_wage b
+	where b.agent_id = a.agent_id
+	and b.cal_year = a.cal_year
+	and b.cal_month = a.cal_month
+	and b.rc_state = 'E') "sumWageValue"
+	from t_agent_wage a
+	where 1 = 1
+	and a.rc_state = 'E'
+    <include refid="agentWageQueryListCondition"/>
+	) nAlias) tAlias
+	where r_rownum >= #{startIndex}
+	and #{endIndex} >=
+	r_rownum	
+	</select>
+	<!-- 保险类薪资结算报表导出SQL -->
+	<select id="getSalaryCalRiskInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+	
+	<!--s-->
+	
+	select a.tradeinfo_id "tradeInfoId",
+	(select tc.com_name
+	from t_def_com tc
+	where tc.rc_state = 'E'
+	and tc.com_id = a.com_id) "comName",
+	(SELECT STORE_NAME
+	FROM T_DEF_STORE
+	WHERE STORE_ID = A.STORE_ID
+	AND RC_STATE = 'E') "storeName",
+	(select td.department_name
+	from t_Def_Department td
+	where td.department_id = a.department_id
+	and td.rc_state = 'E') "departmentName",
+	(SELECT STORE_NAME
+	FROM T_DEF_STORE
+	WHERE STORE_ID = A.STORE_ID
+	AND RC_STATE = 'E') "storeName",
+	A.AGENT_ID "agentId",
+	(SELECT AGT.AGENT_NAME
+	FROM T_AGENT AGT
+	WHERE AGT.AGENT_ID = A.AGENT_ID
+	AND AGT.RC_STATE = 'E') "agentName",
+	(select td.code_name
+	from t_agent_position_trace position, t_def_code td
+	where position.position_code = td.code
+	and td.code_type = 'positionCode'
+	and position.agent_id = a.agent_id
+	and position.rc_state = 'E') "positionName",
+	(select td.code_name
+	from t_agent_position_trace tpt, t_def_code td
+	where tpt.grade_code = td.code
+	and td.code_type = 'gradeCode'
+	and tpt.agent_id = a.agent_id
+	and tpt.rc_state = 'E') "gradeName",
+	a.buss_no "tradeNo",
+	(select ti.trade_info_no
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeInfoNo",
+	a.occupation_com_name "agencyName",
+	a.product_name "productName",
+	(select td.code_name
+	from t_Def_code td
+	where td.code = a.trade_type
+	and td.code_type = 'productType') "productType",
+	(select distinct ti.product_id
+          from t_trade_product_info ti
+         where ti.rc_state = 'E'
+           and ti.trade_info_id = a.tradeinfo_id) "productId",
+	(select tcb.chn_name
+	from t_cust_base_info tcb
+	where tcb.cust_base_info_id = a.customer_id
+	and tcb.rc_state = 'E') "customName",
+	(select DATE_FORMAT(ti.trade_date,'%Y-%m-%d')
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeDate",
+	(select DATE_FORMAT(tsi.status_date,'%Y-%m-%d')
+	from t_trade_status_info tsi
+	where tsi.trade_info_id = a.tradeinfo_id
+	and tsi.rc_state = 'E'
+	and tsi.trade_status = '06') "statusDate",
+	(select CONCAT(tpv.payPeriod,
+	(select td.code_name
+	from t_Def_code td
+	where td.code = tpv.payPeriodUnit
+	and td.code_type = 'payPeriodUnit')
+	)from t_trade_product_info_view tpv where tpv.trade_info_id=a.tradeinfo_id)
+	"payPeriod",
+	(select FUNC_CALL_POLICY_YEAR(a.tradeinfo_id,
+	(select DATE_FORMAT(ts.status_date,
+	'%Y-%m-%d')
+	from t_trade_status_info ts
+	where ts.trade_info_id =
+	a.tradeinfo_id
+	and ts.rc_state = 'E'
+	and ts.trade_status = '06'))
+	from dual) "policyYear",
+	(select tsi.actu_premium
+	from t_trade_status_info tsi
+	where tsi.trade_info_id = a.tradeinfo_id
+	and tsi.rc_state = 'E') "actuPremium",
+	a.standard_prem "standardPrem",
+	a.wage_value "wageValue",
+	a.cal_year "calYear",
+	a.cal_month "calMonth"
+	from t_Agent_Wage a
+	where a.rc_state = 'E'and a.trade_type='2'
+	<include refid="agentWageQueryListCondition"/>
+ 	</select>
+ 	
+ 	<!-- 财富类薪资结算报表导出SQL -->
+	<select id="getSalaryCalWealthInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+	
+	<!--s-->
+	
+	select a.tradeinfo_id "tradeInfoId",
+	(select tc.com_name
+	from t_def_com tc
+	where tc.rc_state = 'E'
+	and tc.com_id = a.com_id) "comName",
+	(select td.department_name
+	from t_Def_Department td
+	where td.department_id = a.department_id
+	and td.rc_state = 'E') "departmentName",
+	(SELECT STORE_NAME
+	FROM T_DEF_STORE
+	WHERE STORE_ID = A.STORE_ID
+	AND RC_STATE = 'E') "storeName",
+	A.AGENT_ID "agentId",
+	(SELECT AGT.AGENT_NAME
+	FROM T_AGENT AGT
+	WHERE AGT.AGENT_ID = A.AGENT_ID
+	AND AGT.RC_STATE = 'E') "agentName",
+	(select td.code_name
+	from t_agent_position_trace position, t_def_code td
+	where position.position_code = td.code
+	and td.code_type = 'positionCode'
+	and position.agent_id = a.agent_id
+	and position.rc_state = 'E') "positionName",
+	(select td.code_name
+	from t_agent_position_trace tpt, t_def_code td
+	where tpt.grade_code = td.code
+	and td.code_type = 'gradeCode'
+	and tpt.agent_id = a.agent_id
+	and tpt.rc_state = 'E') "gradeName",
+	a.buss_no "tradeNo",
+	(select ti.trade_info_no
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeInfoNo",
+	a.occupation_com_name "agencyName",
+	a.product_name "productName",
+	(select td.code_name
+	from t_Def_code td
+	where td.code = a.trade_type
+	and td.code_type = 'productType') "productType",
+	(select distinct ti.product_id
+	from t_trade_product_info ti
+	where ti.rc_state = 'E'
+	and ti.trade_info_id = a.tradeinfo_id) "productId",
+	(select tcb.chn_name
+	from t_cust_base_info tcb
+	where tcb.cust_base_info_id = a.customer_id
+	and tcb.rc_state = 'E') "customName",
+	(select DATE_FORMAT(ti.trade_date,'%Y-%m-%d')
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeDate",
+	(select DATE_FORMAT(tpw.found_date,'%Y-%m-%d')
+	from t_pd_wealth tpw
+	where tpw.rc_state = 'E'
+	and tpw.product_id in
+	(select distinct ti.product_id
+	from t_trade_product_info ti
+	where ti.rc_state = 'E'
+	and ti.trade_info_id = a.tradeinfo_id)) "foundDate",
+	(select tsi.actu_subscription_amount
+	from t_trade_status_info tsi
+	where tsi.trade_info_id = a.tradeinfo_id
+	and tsi.rc_state = 'E') "subscripFee",
+	a.wage_value "bonus",
+	a.cal_year "calYear",
+	a.cal_month "calMonth"
+	from t_Agent_Wage a
+	where a.rc_state = 'E'
+	and a.trade_type = '1'
+	<include refid="agentWageQueryListCondition"/>
+ 	</select>
+ 	 	
+ 	<!-- 汇总表薪资结算报表导出SQL -->
+	<select id="getAllCalInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+	
+	<!--s-->
+	
+	with agent_wage as(
+	select a.store_id,a.com_id,
+	a.department_id,a.agent_id,a.trade_type,a.cal_year,a.cal_month,
+	sum(IFNULL(a.standard_asset,0)) standard_asset,
+	sum(IFNULL(a.wage_value,0)) wage_value,
+	sum(IFNULL(a.standard_prem,0)) standard_prem
+	from t_Agent_wage a
+	where a.rc_state = 'E'
+	<include refid="agentWageQueryListCondition"/>
+	group by a.store_id ,a.department_id, a.com_id,
+	a.agent_id,a.trade_type,a.cal_month,a.cal_year
+	)
+	
+	  <!--F-->
+	select
+	(select com_name from t_def_com where com_id=b.com_id and rc_state='E')
+	"comName",
+	(select department_name from t_def_department where
+	department_id=b.department_id and rc_State='E') "departmentName",
+	(select store_name from t_Def_store where store_id=b.store_id and
+	rc_State='E' ) "storeName",
+	(select agent_name from t_agent where agent_id=b.agent_id and rc_state='E')
+	"agentName",
+	(SELECT tdf.code_name
+	FROM T_AGENT_POSITION_TRACE tpt,t_def_code tdf
+	WHERE
+	tpt.position_code=tdf.code
+	and tdf.code_type='positionCode'
+	and tpt.AGENT_ID = b.AGENT_ID
+	AND tpt.RC_STATE = 'E'
+	AND tpt.START_DATE = (SELECT MAX(START_DATE)
+	FROM T_AGENT_POSITION_TRACE C
+	WHERE C.AGENT_ID = tpt.AGENT_ID
+	AND C.RC_STATE = 'E')
+	AND @ROWNUM :=@rownum+1) "positionName",
+	(SELECT tdf.code_name
+	FROM T_AGENT_POSITION_TRACE tpt,t_def_code tdf
+	WHERE
+	tpt.grade_code=tdf.code
+	and tdf.code_type='gradeCode'
+	and tpt.AGENT_ID = b.AGENT_ID
+	AND tpt.RC_STATE = 'E'
+	AND tpt.START_DATE = (SELECT MAX(START_DATE)
+	FROM T_AGENT_POSITION_TRACE C
+	WHERE C.AGENT_ID = tpt.AGENT_ID
+	AND C.RC_STATE = 'E')
+	AND @ROWNUM :=@rownum+1) "gradeName",
+	b.agent_id  "agentId",
+	(select IFNULL(sum(standard_asset),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '1' )
+	"wealthStandardAssets",
+	(select IFNULL(sum(wage_value),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '1') "weathBonus",
+	(select IFNULL(sum(standard_prem),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '2' )
+	"riskStandardPrem",
+	(select IFNULL(sum(wage_value),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '2') "riskBonus",
+	(select IFNULL(sum(standard_asset),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '3' )
+	"distributionLoan",
+	(select IFNULL(sum(wage_value),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '3') "loanBonus",
+	(select IFNULL(sum(standard_asset),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '4')
+	"otherStandardAssets",
+	(select IFNULL(sum(wage_value),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type = '4' ) "otherBonus",
+	(select IFNULL(sum(wage_value),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type in ('1','2','3','4'))
+	"sumBonus",
+	(select IFNULL(sum(standard_asset),0) from agent_wage c
+	where c.agent_id = b.agent_id and c.cal_month = b.cal_month
+	and c.cal_year = b.cal_year and c.trade_type in ('1','2','3','4'))
+	"sumStandardAssets",
+	 b.cal_Year "calYear",
+     b.cal_Month "calMonth"
+	from agent_wage b
+	group by b.Store_id, b.department_id,
+	b.com_id,b.agent_id,b.cal_month,b.cal_year
+ 	</select>
+ 	<!--财富考核的查询条件-->
+    <sql id="getWealthAssessTradeCondition">
+		<if test='startdate!= null and statedate!=""'>
+			AND c.trade_input_date <![CDATA[>=]]>  STR_TO_DATE(#{startdate},'%Y-%m-%d')
+		</if>
+		<if test='enddate!= null and enddate!=""'>
+			AND c.trade_input_date <![CDATA[<=]]>  STR_TO_DATE(#{enddate},'%Y-%m-%d')
+		</if>
+		<if test='departmentId!= null and departmentId!=""'>
+			and b.department_id=#{departmentId}
+		</if>
+		<if test='comId!= null and comId!=""'>
+			 and b.com_id=#{comId}
+		</if>
+		<if test='storeId!= null and storeId!=""'>
+			and b.store_id=#{storeId}
+		</if>
+		<if test='agentId!= null and agentId!=""'>
+			and b.agent_id=#{agentId}
+		</if>    
+		</sql>
+    <!-- 查询出考核的财富产品的交易Id -->
+	<select id="getWeathAssessTradeList" resultType="java.util.Map" parameterType="java.util.Map">
+	select a.trade_info_id "tradeInfoId",
+	a.actu_subscription_amount "actuSubscription"
+	from t_trade_status_info a,t_agent_wage b,t_trade_info c
+	where a.rc_state = 'E'
+	and a.trade_info_id=b.tradeinfo_id
+	and a.trade_info_id=c.trade_info_id
+	and a.trade_status = '10'
+	and b.rc_state='E'
+	and c.rc_state='E'
+	<include refid="getWealthAssessTradeCondition"/>	
+ 	</select>
+ 	
+ 	<!--保险考核的查询条件-->
+    <sql id="getRiskAssessTradeCondition">
+		<if test='startdate!= null and statedate!=""'>
+			and a.status_date <![CDATA[>=]]>  STR_TO_DATE(#{startdate},'%Y-%m-%d')
+		</if>
+		<if test='enddate!= null and enddate!=""'>
+			and a.status_date <![CDATA[<=]]>  STR_TO_DATE(#{enddate},'%Y-%m-%d')
+		</if>
+		<if test='departmentId!= null and departmentId!=""'>
+			and b.department_id=#{departmentId}
+		</if>
+		<if test='comId!= null and comId!=""'>
+			 and b.com_id=#{comId}
+		</if>
+		<if test='storeId!= null and storeId!=""'>
+			and b.store_id=#{storeId}
+		</if>
+		<if test='agentId!= null and agentId!=""'>
+			and b.agent_id=#{agentId}
+		</if>   
+    </sql>
+ 	
+ 	<!-- 查询出考核的保险产品的交易Id -->
+	<select id="getRiskAssessTradeList" resultType="java.util.Map" parameterType="java.util.Map">
+	select a.trade_info_id "tradeInfoId",
+	a.actu_premium "actuPrem"
+	from
+	t_trade_status_info a,t_agent_wage b
+	where a.rc_state = 'E'
+	and b.rc_state='E'
+	and a.trade_status = '06'
+	and a.trade_info_id=b.tradeinfo_id
+	<include refid="getRiskAssessTradeCondition"/>	
+ 	</select>
+
+ 	
+ 	<!-- 考核-保险产品明细信息 -->
+    <select id="getRiskAssessDetailInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+    
+    <!--s-->
+    
+	select a.tradeinfo_id "tradeInfoId",
+	(select tc.com_name
+	from t_def_com tc
+	where tc.rc_state = 'E'
+	and tc.com_id = a.com_id) "comName",
+	(SELECT STORE_NAME
+	FROM T_DEF_STORE
+	WHERE STORE_ID = A.STORE_ID
+	AND RC_STATE = 'E') "storeName",
+	(select td.department_name
+	from t_Def_Department td
+	where td.department_id = a.department_id
+	and td.rc_state = 'E') "departmentName",
+	(SELECT STORE_NAME
+	FROM T_DEF_STORE
+	WHERE STORE_ID = A.STORE_ID
+	AND RC_STATE = 'E') "storeName",
+	A.AGENT_ID "agentId",
+	(SELECT AGT.AGENT_NAME
+	FROM T_AGENT AGT
+	WHERE AGT.AGENT_ID = A.AGENT_ID
+	AND AGT.RC_STATE = 'E') "agentName",
+	(select td.code_name
+	from t_agent_position_trace position, t_def_code td
+	where position.position_code = td.code
+	and td.code_type = 'positionCode'
+	and position.agent_id = a.agent_id
+	and position.rc_state = 'E') "positionName",
+	(select td.code_name
+	from t_agent_position_trace tpt, t_def_code td
+	where tpt.grade_code = td.code
+	and td.code_type = 'gradeCode'
+	and tpt.agent_id = a.agent_id
+	and tpt.rc_state = 'E') "gradeName",
+	a.buss_no "tradeNo",
+	(select ti.trade_info_no
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeInfoNo",
+	a.occupation_com_name "agencyName",
+	a.product_name "productName",
+	(select td.code_name
+	from t_Def_code td
+	where td.code = a.trade_type
+	and td.code_type = 'productType') "productType",
+	(select distinct ti.product_id
+	from t_trade_product_info ti
+	where ti.rc_state = 'E'
+	and ti.trade_info_id = a.tradeinfo_id) "productId",
+	(select tcb.chn_name
+	from t_cust_base_info tcb
+	where tcb.cust_base_info_id = a.customer_id
+	and tcb.rc_state = 'E') "customName",
+	(select DATE_FORMAT(ti.trade_date,'%Y-%m-%d')
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeDate",
+	(select DATE_FORMAT(tsi.status_date,'%Y-%m-%d')
+	from t_trade_status_info tsi
+	where tsi.trade_info_id = a.tradeinfo_id
+	and tsi.rc_state = 'E'
+	and tsi.trade_status = '06') "statusDate",
+	(select CONCAT(tpv.payPeriod ,
+	(select td.code_name
+	from t_Def_code td
+	where td.code = tpv.payPeriodUnit
+	and td.code_type = 'payPeriodUnit'))
+	from t_trade_product_info_view tpv
+	where tpv.trade_info_id = a.tradeinfo_id) "payPeriod",
+	(select FUNC_CALL_POLICY_YEAR(a.tradeinfo_id,
+	(select DATE_FORMAT(ts.status_date,
+	'%Y-%m-%d')
+	from t_trade_status_info ts
+	where ts.trade_info_id =
+	a.tradeinfo_id
+	and ts.rc_state = 'E'
+	and ts.trade_status = '06'))
+	from dual) "policyYear",
+	(select tsi.actu_premium
+	from t_trade_status_info tsi
+	where tsi.trade_info_id = a.tradeinfo_id
+	and tsi.rc_state = 'E') "actuPremium",
+	a.standard_prem "standardPrem",
+	a.standard_asset "standardAssets"
+	from t_Agent_Wage a
+	where a.rc_state = 'E'
+	and a.trade_type = '2'
+	and a.tradeinfo_id=#{tradeInfoId}
+ 	</select>
+ 	
+ 	 <!-- 考核-财富产品明细信息 -->
+    <select id="getWealthAssessDetailInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+    
+    <!--s-->
+    
+	select a.tradeinfo_id "tradeInfoId",
+	(select tc.com_name
+	from t_def_com tc
+	where tc.rc_state = 'E'
+	and tc.com_id = a.com_id) "comName",
+	(select td.department_name
+	from t_Def_Department td
+	where td.department_id = a.department_id
+	and td.rc_state = 'E') "departmentName",
+	(SELECT STORE_NAME
+	FROM T_DEF_STORE
+	WHERE STORE_ID = A.STORE_ID
+	AND RC_STATE = 'E') "storeName",
+	A.AGENT_ID "agentId",
+	(SELECT AGT.AGENT_NAME
+	FROM T_AGENT AGT
+	WHERE AGT.AGENT_ID = A.AGENT_ID
+	AND AGT.RC_STATE = 'E') "agentName",
+	(select td.code_name
+	from t_agent_position_trace position, t_def_code td
+	where position.position_code = td.code
+	and td.code_type = 'positionCode'
+	and position.agent_id = a.agent_id
+	and position.rc_state = 'E') "positionName",
+	(select td.code_name
+	from t_agent_position_trace tpt, t_def_code td
+	where tpt.grade_code = td.code
+	and td.code_type = 'gradeCode'
+	and tpt.agent_id = a.agent_id
+	and tpt.rc_state = 'E') "gradeName",
+	a.buss_no "tradeNo",
+	(select ti.trade_info_no
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeInfoNo",
+	a.occupation_com_name "agencyName",
+	a.product_name "productName",
+	(select td.code_name
+	from t_Def_code td
+	where td.code = a.trade_type
+	and td.code_type = 'productType') "productType",
+	(select distinct ti.product_id
+	from t_trade_product_info ti
+	where ti.rc_state = 'E'
+	and ti.trade_info_id = a.tradeinfo_id) "productId",
+	(select tcb.chn_name
+	from t_cust_base_info tcb
+	where tcb.cust_base_info_id = a.customer_id
+	and tcb.rc_state = 'E') "customName",
+	(select DATE_FORMAT(ti.trade_date, '%Y-%m-%d')
+	from t_trade_info ti
+	where ti.trade_info_id = a.tradeinfo_id
+	and ti.rc_state = 'E') "tradeDate",
+	(select DATE_FORMAT(tpw.found_date,'%Y-%m-%d')
+	from t_pd_wealth tpw
+	where tpw.rc_state = 'E'
+	and tpw.product_id in
+	(select distinct ti.product_id
+	from t_trade_product_info ti
+	where ti.rc_state = 'E'
+	and ti.trade_info_id = a.tradeinfo_id)) "foundDate",
+	a.standard_asset "standardAssets",
+	a.trade_money "subscripeFee"
+	from t_Agent_Wage a
+	where a.rc_state = 'E'
+	and a.trade_type = '1'
+	and a.tradeinfo_id=#{tradeInfoId}
+ 	</select>
+ 	
+ 	
+    <!-- 考核-财富汇总明细信息 -->
+    <select id="getAllAssessDetailInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+    
+    <!--s-->
+    
+	with agent_assess as
+   (select a.com_id,
+           a.store_id,
+           a.department_id,
+           a.agent_id,
+           a.trade_type,
+           sum(IFNULL(a.standard_asset, 0)) standard_asset
+      from t_agent_assess a
+     where a.rc_state = 'E'
+       and a.tradeinfo_id in
+           (select f.trade_info_id
+              from t_trade_info f
+             where f.rc_state = 'E' and f.trade_staus in ('06', '10'))
+       <include refid="getAssessCalCondition"/>
+     group by a.store_id,
+              a.department_id,
+              a.com_id,
+              a.agent_id,
+              a.trade_type)
+              
+      <!--F-->   
+            
+  select (select com_name
+            from t_def_com
+           where com_id = b.com_id
+             and rc_state = 'E') "comName",
+         (select department_name
+            from t_def_department
+           where department_id = b.department_id
+             and rc_State = 'E') "departmentName",
+         (select store_name
+            from t_Def_store
+           where store_id = b.store_id
+             and rc_State = 'E') "storeName",
+         (select agent_name
+            from t_agent
+           where agent_id = b.agent_id
+             and rc_state = 'E') "agentName",
+         (SELECT tdf.code_name
+            FROM T_AGENT_POSITION_TRACE tpt, t_def_code tdf
+           WHERE tpt.position_code = tdf.code
+             and tdf.code_type = 'positionCode'
+             and tpt.AGENT_ID = b.AGENT_ID
+             AND tpt.RC_STATE = 'E'
+             AND tpt.START_DATE = (SELECT MAX(START_DATE)
+                                     FROM T_AGENT_POSITION_TRACE C
+                                    WHERE C.AGENT_ID = tpt.AGENT_ID
+                                      AND C.RC_STATE = 'E')
+             AND @ROWNUM :=@rownum+1) "positionName",
+         (SELECT tdf.code_name
+            FROM T_AGENT_POSITION_TRACE tpt, t_def_code tdf
+           WHERE tpt.grade_code = tdf.code
+             and tdf.code_type = 'gradeCode'
+             and tpt.AGENT_ID = b.AGENT_ID
+             AND tpt.RC_STATE = 'E'
+             AND tpt.START_DATE = (SELECT MAX(START_DATE)
+                                     FROM T_AGENT_POSITION_TRACE C
+                                    WHERE C.AGENT_ID = tpt.AGENT_ID
+                                      AND C.RC_STATE = 'E')
+             AND @ROWNUM :=@rownum+1) "gradeName",
+         b.agent_id "agentId",
+         (select IFNULL(sum(standard_asset), 0)
+            from agent_assess c
+           where c.agent_id = b.agent_id
+             and c.trade_type = '1') "sumWealthStandardAssets",
+         (select IFNULL(sum(standard_asset), 0)
+            from agent_assess c
+           where c.agent_id = b.agent_id
+             and c.trade_type = '2') "sumRiskStandardAssets",
+         (select IFNULL(sum(standard_asset), 0)
+            from agent_assess c
+           where c.agent_id = b.agent_id
+             and c.trade_type = '3') "sumLoanStandardAssets",
+         (select IFNULL(sum(standard_asset), 0)
+            from agent_assess c
+           where c.agent_id = b.agent_id
+             and c.trade_type = '4') "sumOtherStandardAssets",
+         (select IFNULL(sum(standard_asset), 0) from agent_assess) "sumStandardAssets"
+    from agent_assess b
+   group by b.Store_id, b.department_id, b.com_id, b.agent_id
+ 	</select>
+ 	<!--考核的结算条件-->
+    <sql id="getAssessCalCondition">
+		<if test='assessYear!= null and assessYear!="" and  assessMonth!= null and assessMonth!="" '>
+         and  a.assess_Year=#{assessYear}
+         and  a.assess_Month=#{assessMonth}
+		</if>
+		<if test='agentId!= null and agentId!="" '>
+		and a.agent_id=#{agentId}
+		</if>
+		<if test='departmentId!= null and departmentId!="" '>
+		and a.department_id=#{departmentId}
+		</if>
+	    <if test='storeId!= null and storeId!="" '>
+		and a.store_id=#{storeId}
+		</if>
+		<if test='comId!=null and comId!=""'>
+		and a.com_id=#{comId}
+		</if>
+ 	</sql>
+ 	
+ 	<!-- 获取保险产品缴费期间 -->
+ 	<select id="getProductDeclineList" resultType="java.util.Map" parameterType="java.util.Map">
+	select a.payPeriod "payperiod", a.payPeriodUnit "payperiodUnit"
+	from t_trade_product_info_view a
+	where a.trade_INFO_id = #{tradeInfoId}
+ 	</select>
+ 	
+ 	<!-- 获取薪资最新的结算信息 记录-->
+ 	<select id="getMaxAgentWageInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+ 	
+ 	<!--s-->
+ 	
+ select b.wage_count "wageCount", b.agent_wage_info_id "agentWageInfoId"
+  from t_agent_wage_info b
+ where b.rc_state = 'E'
+   and b.cal_year = #{calYear}
+   and b.cal_month = #{calMonth}
+   and b.wage_count = (select max(a.wage_count)
+                         from t_agent_wage_info a
+                        where a.rc_state = 'E'
+                          and a.cal_year = #{calYear}
+                          and a.cal_month = #{calMonth})
+ 	</select>
+ 	
+ 	 	
+ 	<!-- 获取考核预警的最新的结算信息 记录-->
+ 	<select id="getMaxAgentAssessInfoList" resultType="java.util.Map" parameterType="java.util.Map">
+ 	
+ 	<!--s-->
+ 	
+   select b.assess_count         "assessCount",
+        b.agent_assess_info_id "agentAssessInfoId"
+   from t_Agent_Assess_Info b
+  where b.rc_state = 'E'
+    and b.assess_year = #{assessCalYear}
+    and b.assess_month = #{assessCalMonth}
+    and b.assess_unit = #{assessCalUnit}
+    and b.assess_status = '1'
+    and b.assess_count = (select max(a.assess_count)
+                            from t_Agent_Assess_Info a
+                           where a.rc_state = 'E'
+                             and a.assess_year = #{assessCalYear}
+                             and a.assess_month = #{assessCalMonth}
+                             and a.assess_unit = #{assessCalUnit}
+                             and a.assess_status = '1')
+                             
+ 	</select>
+ 	<!-- 获取考核预警的最新的结算信息 记录-->      
+    <select id="getFoundDate" resultType="java.lang.String" parameterType="java.util.Map">
+	 select a.expectOpenDay  "openDate"
+	  from t_trade_product_info_view a
+	 where a.TRADE_INFO_ID = ${tradeInfoId}
+	   and a.PRODUCT_ID = ${productId}
+ 	</select>
+ 	
+ 
+ 	<!--考核的预警查出明细单子的条件-->
+    <sql id="getAssessCalPFLIFE">
+		<if test='assessCalYear!=null and assessCalMonth=="6" and assessCalUnit=="S"'>
+           and b.status_date <![CDATA[<=]]> date '${assessCalYear}-06-30'
+           and b.status_date<![CDATA[>=]]> date '${assessCalYear}-01-01'
+		</if>
+		<if test='assessCalYear!=null and assessCalMonth=="12"  and  assessCalUnit=="S"'>
+           and b.status_date <![CDATA[<=]]> date '${assessCalYear}-12-31'
+           and b.status_date <![CDATA[>=]]> date '${assessCalYear}-07-01'
+		</if>
+ 	</sql>
+ 	<sql id="getAssessCalGDWEALTH">
+		<if test='assessCalYear!=null and assessCalMonth=="6" and assessCalUnit=="S"'>
+          and DATE_FORMAT(g.found_date,'%Y-%m-%d') <![CDATA[<=]]> '${assessCalYear}-06-30'
+          and DATE_FORMAT(g.found_date,'%Y-%m-%d') <![CDATA[>=]]> '${assessCalYear}-01-01'
+		</if>
+		<if test='assessCalYear!=null and assessCalMonth=="12" and  assessCalUnit=="S"'>
+          and DATE_FORMAT(g.found_date,'%Y-%m-%d') <![CDATA[<=]]> '${assessCalYear}-12-31'
+          and DATE_FORMAT(g.found_date,'%Y-%m-%d') <![CDATA[>=]]> '${assessCalYear}-07-01'
+		</if>
+ 	</sql>
+    <sql id="getAssessCalFGWEALTH">
+		<if test='assessCalYear!=null and assessCalMonth=="6" and  assessCalUnit=="S"'>
+        and c.expectOpenDay <![CDATA[>=]]>'${assessCalYear}-01-01'
+        and c.expectOpenDay <![CDATA[<=]]>'${assessCalYear}-06-30'
+		</if>
+	    <if test='assessCalYear!=null and assessCalMonth=="12" and  assessCalUnit=="S"'>
+        and c.expectOpenDay <![CDATA[<=]]>'${assessCalYear}-12-31'
+        and c.expectOpenDay <![CDATA[>=]]>'${assessCalYear}-07-01'
+		</if>
+ 	</sql>
+ 	
+ 	<!-- 查询某个月薪资结算的所有交易状态为承保/成立的单子 -->
+    <select id="getAssessFoundStatusInfo" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+    
+    select a.trade_info_id "tradeInfoId",
+         b.actu_premium  "actuPremium"
+    from t_trade_info a, t_trade_status_info b
+   where a.trade_info_id = b.trade_info_id
+     and a.trade_staus = '06'
+     and a.trade_type = '2'
+     and a.rc_state = 'E'
+     and b.rc_state = 'E'
+   <include refid="getAssessCalPFLIFE"/>
+  union all
+  select a.trade_info_id            "tradeInfoId",
+         b.actu_subscription_amount "actuPremium"
+    from t_trade_info              a,
+         t_trade_status_info       b,
+         t_trade_product_info_view c,
+         t_pd_product              f
+   where a.trade_info_id = b.trade_info_id
+     and a.trade_staus = '10'
+     and a.trade_info_id = c.TRADE_INFO_ID
+     and a.rc_state = 'E'
+     and b.rc_state = 'E'
+     and a.trade_type = '1'
+     and f.rc_state = 'E'
+     and c.product_id = f.product_id
+     and f.product_sub_type in ('03', '01')
+     and f.product_type = '1'
+  <include refid="getAssessCalFGWEALTH"/>
+  union all
+  select a.trade_info_id            "tradeInfoId",
+         b.actu_subscription_amount "actuPremium"
+    from t_trade_info              a,
+         t_trade_status_info       b,
+         t_trade_product_info_view c,
+         t_pd_product              f,
+         t_pd_wealth               g
+   where a.trade_info_id = b.trade_info_id
+     and a.trade_staus = '10'
+     and a.trade_info_id = c.TRADE_INFO_ID
+     and a.rc_state = 'E'
+     and b.rc_state = 'E'
+     and a.trade_type = '1'
+     and f.rc_state = 'E'
+     and c.product_id = f.product_id
+     and f.product_sub_type = '02'
+     and f.product_type = '1'
+     and f.product_id = g.product_id
+     and g.rc_state = 'E'
+     <include refid="getAssessCalGDWEALTH"/>
+    </select>
+    
+    
+    <!-- 考核管理页面查询条件 -->
+	<sql id="AssessCalQueryListCondition">
+		<if test='assessYear!= null and assessYear!=""'>
+			AND A.ASSESS_YEAR = #{assessYear}
+		</if>
+		<if test='assessMonth!= null and assessMonth!=""'>
+			AND A.ASSESS_MONTH = #{assessMonth}
+		</if>
+		<if test='assessUnit!= null and assessUnit!=""'>
+			AND A.ASSESS_UNIT = #{assessUnit}
+		</if>
+   </sql>
+   
+  <!-- 考核管理页面查询总条数-->
+  <select id="AssessCalQueryListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+	select count(1)
+	from t_agent_assess_info a
+	where 1 = 1
+	and a.rc_state = 'E'
+	<include refid="AssessCalQueryListCondition"/>
+  </select> 
+  <!-- 考核管理页面查询信息-->
+  	<select id="AssessCalQueryListPage" parameterType="java.util.Map" resultType="java.util.Map">
+  	
+  	<!--s-->
+	select tAlias.*
+	from (select nAlias.*, @rownum:=@rownum+1 r_rownum
+	from (SELECT (SELECT @rownum := 0),
+       a.agent_assess_info_id "assessInfoId",
+       a.assess_year "assessYear",
+       a.assess_month "assessMonth",
+       a.assess_unit "assessUnit",
+       (select b.code_name
+          from t_Def_code b
+         where b.code_type = 'assessUnit'
+           and b.code = a.assess_unit) "assessUnitName",
+       a.assess_status "assessStatus",
+       (select b.code_name
+          from t_def_code b
+         where b.code = a.assess_status
+           and b.code_type = 'assessState') "assessStatusName",
+       DATE_FORMAT(a.assess_warndate, '%Y-%m-%d') "assessDate",
+       DATE_FORMAT(a.assess_fowarddate, '%Y-%m-%d') "forwardDate",
+       a.assess_sum_assets "assessSumAssets"
+  from t_agent_assess_info a
+ where a.rc_state = 'E'
+	<include refid="AssessCalQueryListCondition"/>
+	) nAlias) tAlias
+	where r_rownum >= #{startIndex}
+	and #{endIndex} >=
+	r_rownum	
+	</select>
+	
+    <!-- 考核查询页面查询条件 -->
+	<sql id="agentAssessQueryListCondition">
+		<if test='comId!= null and comId!=""'>
+			AND a.COM_ID = #{comId}
+		</if>
+		<if test='storeId!= null and storeId!=""'>
+			AND a.STORE_ID = #{storeId}
+		</if>
+		<if test='agentId!= null and agentId!=""'>
+			AND a.agent_ID = #{agentId}
+		</if>
+		<if test='departmentId!= null and departmentId!=""'>
+			AND a.DEPARTMENT_ID = #{departmentId}
+		</if>
+		<if test='assessYear!= null and assessYear!=""'>
+			AND a.ASSESS_YEAR = #{assessYear}
+		</if>
+		<if test='assessMonth!= null and assessMonth!=""'>
+			AND a.ASSESS_MONTH = #{assessMonth}
+		</if>
+		<if test='assessUnit!= null and assessUnit!=""'>
+			AND a.ASSESS_UNIT = #{assessUnit}
+		</if>
+		<if test='positionCode!= null and positionCode!=""'>
+		
+		 <!--F-->
+		 
+			AND(SELECT c.POSITION_CODE FROM T_AGENT_POSITION_TRACE c 
+                  WHERE c.AGENT_ID = a.AGENT_ID AND c.RC_STATE = 'E'  
+      					AND c.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE d 
+      						WHERE d.AGENT_ID = a.AGENT_ID AND d.RC_STATE='E') AND @ROWNUM :=@rownum+1)=#{positionCode}
+		</if>
+		<if test='gradeCode!= null and gradeCode!=""'>
+		
+		 <!--F-->
+		 
+			(SELECT c.grade_code FROM T_AGENT_POSITION_TRACE c 
+                  WHERE c.AGENT_ID = a.AGENT_ID AND c.RC_STATE = 'E'  
+      					AND c.START_DATE = (SELECT MAX(START_DATE) FROM T_AGENT_POSITION_TRACE d 
+      						WHERE d.AGENT_ID = a.AGENT_ID AND d.RC_STATE='E') AND @ROWNUM :=@rownum+1)=#{gradeCode}
+		</if>
+  </sql>
+  
+   <!-- 考核查询页面查询总条数-->
+  <select id="agentAssessListCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+	select count(1)
+	from t_agent_assess a
+	where 1 = 1
+	and a.rc_state = 'E'
+	<include refid="agentAssessQueryListCondition"/>
+  </select>
+	
+  <!-- 考核查询页面查询脚本 -->
+   <select id="agentAssessListPage" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		
+		<!--s-->	
+	select tAlias.*
+	from (select nAlias.*,@rownum:=@rownum+1 r_rownum
+	from (
+	select distinct (SELECT @rownum := 0),
+	            a.department_id "departmentId",
+                (select dp.department_name
+                   from t_Def_Department dp
+                  where dp.department_id = a.department_id
+                    and dp.rc_state = 'E'
+                    and dp.state = '1') "departmentName",
+                a.store_id "storeId",
+                (select ds.store_name
+                   from t_def_store ds
+                  where ds.store_id = a.store_id
+                    and ds.rc_state = 'E'
+                    and ds.state = '01') "storeName",
+                a.com_id "comId",
+                (select dc.com_name
+                   from t_def_com dc
+                  where dc.com_id = a.com_id
+                    and dc.rc_state = 'E'
+                    and dc.state = '01') "comName",
+                a.agent_id "agentId",
+                (select ta.agent_name
+                   from t_agent ta
+                  where ta.agent_id = a.agent_id
+                    and ta.rc_state = 'E'
+                    and ta.work_state = '1') "agentName",
+                (select td.code_name
+                   from t_agent_position_trace tp, t_def_code td
+                  where tp.agent_id = a.agent_id
+                    and tp.rc_state = 'E'
+                    and td.code = (SELECT c.POSITION_CODE
+                                     FROM T_AGENT_POSITION_TRACE c
+                                    WHERE c.AGENT_ID = A.AGENT_ID
+                                      AND c.RC_STATE = 'E'
+                                      AND c.START_DATE =
+                                          (SELECT MAX(START_DATE)
+                                             FROM T_AGENT_POSITION_TRACE d
+                                            WHERE d.AGENT_ID = A.AGENT_ID
+                                              AND d.RC_STATE = 'E')
+                                      AND @ROWNUM :=@rownum+1)
+                    and td.code_type = 'positionCode') "positionName",
+                (select td.code_name
+                   from t_agent_position_trace tp, t_def_code td
+                  where tp.agent_id = a.agent_id
+                    and tp.rc_state = 'E'
+                    and td.code = tp.grade_code
+                    and td.code_type = 'gradeCode') "gradeName",
+                a.assess_year "assessYear",
+                a.assess_month "assessMonth",
+                a.assess_unit "assessUnit",
+                (select c.code_name
+                   From t_def_code c
+                  where c.code = a.assess_unit
+                    and c.code_type = 'assessUnit') "assessUnitName",
+                (select sum(b.standard_asset)
+                   from t_agent_assess b
+                  where b.agent_id = a.agent_id
+                    and b.assess_year = a.assess_year
+                    and b.assess_month = a.assess_month
+                    and b.assess_unit = a.assess_unit
+                    and b.rc_state = 'E') "sumAssessAssets"
+  from t_agent_assess a
+ where 1 = 1
+   and a.rc_state = 'E'
+    <include refid="agentAssessQueryListCondition"/>
+	) nAlias) tAlias
+	where r_rownum >= #{startIndex}
+	and #{endIndex} >=
+	r_rownum	
+	</select>
+	<!-- 工资主表查询 -->
+	<select id="querySalaryList" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select tAlias.*
+		from (select nAlias.*, @rownum:=@rownum+1 r_rownum
+		from
+		(SELECT (SELECT @rownum := 0),
+	 a.sly_salary_id 'slySalaryId',
+	a.`month` 'month'
+	from t_sly_salary a
+	where 1=1
+	and a.RC_STATE = 'E'
+	<include refid="querySalaryListCondition"/>
+	ORDER BY a.sly_salary_id DESC) nAlias) tAlias
+	where
+		r_rownum  >=
+		#{startIndex}
+		and #{endIndex} >= r_rownum 
+</select>
+    <select id="querySalaryListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_salary a
+    where 1=1
+    and a.RC_STATE = 'E'
+    <include refid="querySalaryListCondition"/>
+    </select>
+    
+    <!-- 基本工资表查询 -->
+    <select id="queryBaseSalaryList" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select tAlias.*
+	from (select nAlias.*,@rownum:=@rownum+1 r_rownum
+	from (
+	select distinct (SELECT @rownum := 0),
+	 a.SLY__BASE_SALARY_ID 'slyBaseSalaryId',
+	a.sly_salary_id 'slySalaryId',
+	a.`MONTH` 'month',
+	a.DEPARTMENT 'department',
+	a.POST 'post',
+	a.WORK_NUMBER 'workNumber',
+	a.CHN_NAME 'chnName',
+	a.BASE_SALARY 'baseSalary',
+	a.BUSSINESS_BONUS 'bussinessBonus',
+	a.LUNCH_ALLOWNACE 'lunchAllownace',
+	a.HIHG_TEP_FEE 'hihgTepFee',
+	a.ABSENCE_FEE 'absenceFee',
+	a.OTHER 'other',
+	a.SALARY_OF_THEORY 'salaryOfTheory',
+	a.PENSION 'pension',
+	a.MEDICARE 'medicare',
+	a.UNEMPLOYMENT 'unemployment',
+	a.ACCUMULATION_FUND 'accumulationFund',
+	a.TAX_FEE 'taxFee',
+	a.PERSONAL_TAX 'personalTax',
+	a.ACTUAL_SALARY 'actualSalary'
+	from t_sly_base_salary a
+	where 1=1
+	and a.RC_STATE = 'E'
+	<include refid="queryBaseSalaryListCondition"/>
+	and a.month = #{month}
+	ORDER BY a.SLY__BASE_SALARY_ID) nAlias) tAlias
+	where
+		r_rownum  >=
+		#{startIndex}
+		and #{endIndex} >= r_rownum 
+</select>
+    <select id="queryBaseSalaryListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_base_salary a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+    <include refid="queryBaseSalaryListCondition"/>
+    </select>
+    <sql id="querySalaryListCondition">
+    <if test="month != null and month !=''" >
+      		 AND A.MONTH = #{month}
+    	</if>
+    </sql>
+    <sql id="queryBaseSalaryListCondition">
+    <if test="department != null and department !=''" >
+      		 AND A.DEPARTMENT = #{department}
+    	</if>
+    	<if test="chnName != null and chnName !=''" >
+      		 AND A.CHN_NAME like '%${chnName}%'
+    	</if>
+    </sql>
+    <!-- 国金交易佣金表查询 -->
+	<select id="queryGuojinCommissionIdList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select tAlias.*
+		from (select nAlias.*,@rownum:=@rownum+1 r_rownum
+		from (
+		select distinct (SELECT @rownum := 0),
+		a.SLY_GUOJIN_COMMISSION_ID 'slyGuojinCommissionId',
+		a.SLY_SALARY_ID 'slySalaryId',
+		a.`MONTH` 'month',
+		a.work_number 'workNumber',
+		a.CUST_NAME 'custName',
+		a.ACCOUNT 'account',
+		a.ESTABLISH_DATE 'establishDate',
+		a.MARKET_VALUE_MAX 'marketValueMax',
+		a.PERSONAL_VALUE_MAX 'personalValueMax',
+		a.TRADE_AMOUNT 'tradeAmount',
+		a.DISTRIBUTE_NET_VALUE 'distributeNetValue',
+		a.CHANNEL 'channel',
+		a.REMARKS 'remarks',
+		a.CUST_RELATION 'custRelation'
+		from t_sly_guojin_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		ORDER BY a.SLY_GUOJIN_COMMISSION_ID desc) nAlias) tAlias
+		where
+		r_rownum >=
+		#{startIndex}
+		and #{endIndex} >= r_rownum
+	</select>
+    <select id="queryGuojinCommissionIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_guojin_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+    </select>
+
+	<!-- 海外投资表查询 -->
+	<select id="queryOverseasCommissionIdList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select tAlias.*
+		from (select nAlias.*,@rownum:=@rownum+1
+		r_rownum
+		from (
+		select distinct (SELECT @rownum := 0),
+		a.sly_overseas_commission_id 'slyOverseasCommissionId',
+		a.sly_salary_id 'slySalaryId',
+		a.`month` 'month',
+		a.work_number 'workNumber',
+		a.organization 'organization',
+		a.product_side 'productSide',
+		a.product_plan 'productPlan',
+		a.purchase_date 'purchaseDate',
+		a.in_pay 'inPay',
+		a.agent_name 'agentName',
+		a.first_commission_rate 'firstCommissionRate',
+		a.first_commission 'firstCommission',
+		a.settle_commission 'settleCommission',
+		a.insurance_policy_no 'insurancePolicyNo',
+		a.applicant_name 'applicantName',
+		a.recognizee_name 'recognizeeName',
+		a.CHANNEL 'channel',
+		a.remark 'remark'
+		from t_sly_overseas_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		ORDER BY a.sly_overseas_commission_id desc) nAlias) tAlias
+		where
+		r_rownum >=
+		#{startIndex}
+		and #{endIndex} >= r_rownum
+	</select>
+    <select id="queryOverseasCommissionIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_overseas_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+    </select>
+
+	<!-- 项目端佣金表查询 -->
+	<select id="queryProjectCommissionIdList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select tAlias.*
+		from (select nAlias.*,@rownum:=@rownum+1
+		r_rownum
+		from (
+		select distinct (SELECT @rownum := 0),
+		a.SLY_PROJECT_COMMISSION_ID 'slyProjectCommissionId',
+		a.sly_salary_id 'slySalaryId',
+		a.`month` 'month',
+		a.work_number 'workNumber',
+		a.PRODUCT_NAME 'productName',
+		a.COMPANY_FIX_INCOME 'companyFixIncome',
+		a.COMPANY_FLOAT_INCOME 'companyFloatIncome',
+		a.PROJECT_IMPORT_PERSON 'projectImportPerson',
+		a.FIRST_ISSUE_RATE 'firstIssueRate',
+		a.ACTUAL_FIRST_ISSUE_AMOUNT 'actualFirstIssueAmount',
+		a.SECOND_ISSUE_RATE 'secondIssueRate',
+		a.ACTUAL_SECOND_ISSUE_AMOUNT 'actualSecondIssueAmount',
+		a.LAST_ISSUE_RATE 'lastIssueRate',
+		a.CHANNEL 'channel',
+		a.NEW_INCOME_AFERT_TAX 'newIncomeAfertTax',
+		a.ISSUE_RATE_WAY 'issueRateWay',
+		a.ISSUE_RATE 'issueRate',
+		a.SEND_COMMISSION 'sendCommission',
+		a.OTHER_COMMISSION 'otherCommission',
+		a.REMARKS 'remarks',
+		a.ACTUAL_LAST_ISSUE_AMOUNT 'actualLastIssueAmount'
+		from t_sly_project_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		ORDER BY a.SLY_PROJECT_COMMISSION_ID desc) nAlias) tAlias
+		where
+		r_rownum >=
+		#{startIndex}
+		and #{endIndex} >= r_rownum
+	</select>
+    <select id="queryProjectCommissionIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_project_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+    </select>
+
+	<!-- 补发利益表查询 -->
+	<select id="queryReissueIdList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select tAlias.*
+		from (select nAlias.*,@rownum:=@rownum+1
+		r_rownum
+		from (
+		select distinct (SELECT @rownum := 0),
+		a.sly_reissue_id
+		'slyReissueId',
+		a.sly_salary_id 'slySalaryId',
+		a.`month` 'month',
+		a.work_number 'workNumber',
+		a.organization 'organization',
+		a.product_name 'productName',
+		a.product_create_date 'productCreateDate',
+		a.agent_name 'agentName',
+		a.team_director 'teamDirector',
+		a.customer_name 'customerName',
+		a.customer_type 'customerType',
+		a.scale 'scale',
+		a.duration 'duration',
+		a.gauge_standard 'gaugeStandard',
+		a.commission_rate 'commissionRate',
+		a.reissue_commission 'reissueCommission',
+		a.reissue_allowance 'reissueAllowance',
+		a.reissue_added_bonus 'reissueAddedBonus',
+		a.CHANNEL 'channel',
+		a.RECOMMOEND_NAME 'recommoendName',
+		a.remarks 'remarks'
+		from t_sly_reissue a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		ORDER BY a.sly_reissue_id desc) nAlias) tAlias
+		where
+		r_rownum >=
+		#{startIndex}
+		and
+		#{endIndex} >= r_rownum
+	</select>
+    <select id="queryReissueIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_reissue a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+    </select>
+    
+    <!-- 销售佣金表查询 -->
+	<select id="querySaleCommissionIdList" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select tAlias.*
+	from (select nAlias.*,@rownum:=@rownum+1
+	r_rownum
+	from (
+	select distinct (SELECT @rownum := 0),
+	a.SLY_SALE_COMMISSION_ID 'slySaleCommissionId',
+	a.sly_salary_id 'slySalaryId',
+	a.`month` 'month',
+	a.work_number 'workNumber',
+	a.ORGNIZITION 'orgnizition',
+	a.PRODUCT_NAME 'productName',
+	a.FOUND_DATE 'foundDate',
+	a.AGENT_NAME 'agentName',
+	a.DEPARTMENT_LEADER 'departmentLeader',
+	a.CUST_NAME 'custName',
+	a.CUST_TYPE 'custType',
+	a.AMOUNT 'amount',
+	a.CLOSE_PERIODS 'closePeriouds',
+	a.AMOUNT_STANDARD 'amountStandard',
+	a.COMMISSION_RATE 'commissionRate',
+	a.COMMISSION_AMOUNT 'commissionAmount',
+	a.MANAGEMENT_ALLOWANCE 'managementAllownace',
+	a.RECOMMEND_NAME 'recommendName',
+	a.ADD_BONUS 'addBonus',
+	a.CHANNEL 'channel',
+	a.SERVICE_ALLOWANCE 'serviceAllowance',
+	a.CONTINUE_COMMISSION 'continueCommission',
+	a.CONTINUE_MANAGEMENT_ALLOWANCE 'continueManagementAllowance',
+	a.FLOAT_REMARKS 'floatRemarks',
+	a.OTHER_SALES_COMMISSION 'otherSalesCommission',
+	a.MARK 'mark'
+	from t_sly_sale_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+	ORDER BY a.SLY_SALE_COMMISSION_ID desc) nAlias) tAlias
+	where
+	r_rownum >=
+	#{startIndex}
+	and
+	#{endIndex} >= r_rownum
+</select>
+    <select id="querySaleCommissionIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_sale_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+    </select>
+
+	<!-- 暂扣利益表查询 -->
+	<select id="queryWithholdIdList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		select tAlias.*
+		from (select nAlias.*,@rownum:=@rownum+1
+		r_rownum
+		from (
+		select distinct (SELECT @rownum := 0),
+		a.sly_withhold_id 'slyWithholdId',
+		a.sly_salary_id 'slySalaryId',
+		a.`month` 'month',
+		a.work_number 'workNumber',
+		a.organization 'organization',
+		a.product_name 'productName',
+		a.product_create_date 'productCreateDate',
+		a.agent_name 'agentName',
+		a.team_director 'teamDirector',
+		a.customer_name 'customerName',
+		a.customer_type 'customerType',
+		a.scale 'scale',
+		a.duration 'duration',
+		a.gauge_standard 'gaugeStandard',
+		a.commission_rate 'commissionRate',
+		a.withhold_commission 'withholdCommission',
+		a.withhold_allowance 'withholdAllowance',
+		a.withhold_added_bonus 'withholdAddedBonus',
+		a.CHANNEL 'channel',
+		a.RECOMMOEND_NAME 'recommoendName',
+		a.remarks 'remarks'
+		from t_sly_withhold a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		ORDER BY a.sly_withhold_id desc) nAlias) tAlias
+		where
+		r_rownum >=
+		#{startIndex}
+		and
+		#{endIndex} >= r_rownum
+	</select>
+    <select id="queryWithholdIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_withhold a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+    </select>
+    
+    <!-- 综合查询 -->
+     <select id="queryBaseSalaryDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select 
+	 a.SLY__BASE_SALARY_ID 'slyBaseSalaryId',
+	a.sly_salary_id 'slySalaryId',
+	a.`MONTH` 'month',
+	a.DEPARTMENT 'department',
+	a.POST 'post',
+	a.WORK_NUMBER 'workNumber',
+	a.CHN_NAME 'chnName',
+	a.BASE_SALARY 'baseSalary',
+	a.BUSSINESS_BONUS 'bussinessBonus',
+	a.LUNCH_ALLOWNACE 'lunchAllownace',
+	a.HIHG_TEP_FEE 'hihgTepFee',
+	a.ABSENCE_FEE 'absenceFee',
+	a.OTHER 'other',
+	a.SALARY_OF_THEORY 'salaryOfTheory',
+	a.PENSION 'pension',
+	a.MEDICARE 'medicare',
+	a.UNEMPLOYMENT 'unemployment',
+	a.ACCUMULATION_FUND 'accumulationFund',
+	a.TAX_FEE 'taxFee',
+	a.PERSONAL_TAX 'personalTax',
+	a.ACTUAL_SALARY 'actualSalary'
+	from t_sly_base_salary a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+	and a.work_number = #{workNumber}
+</select>
+ <select id="queryBaseSalaryDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_base_salary a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+     <select id="querySaleCommissionDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select
+	a.SLY_SALE_COMMISSION_ID 'slySaleCommissionId',
+	a.sly_salary_id 'slySalaryId',
+	a.month 'month',
+	a.WORK_NUMBER 'workNumber',
+	a.ORGNIZITION 'orgnizition',
+	a.PRODUCT_NAME 'productName',
+	a.FOUND_DATE 'foundDate',
+	a.AGENT_NAME 'agentName',
+	a.DEPARTMENT_LEADER 'departmentLeader',
+	a.CUST_NAME 'custName',
+	a.CUST_TYPE 'custType',
+	a.AMOUNT 'amount',
+	a.CLOSE_PERIODS 'closePeriouds',
+	a.AMOUNT_STANDARD 'amountStandard',
+	a.COMMISSION_RATE 'commissionRate',
+	a.COMMISSION_AMOUNT 'commissionAmount',
+	a.MANAGEMENT_ALLOWANCE 'managementAllownace',
+	a.RECOMMEND_NAME 'recommendName',
+	a.CHANNEL 'channel',
+	a.ADD_BONUS 'addBonus',
+	a.SERVICE_ALLOWANCE 'serviceAllowance',
+	a.CONTINUE_COMMISSION 'continueCommission',
+	a.CONTINUE_MANAGEMENT_ALLOWANCE 'continueManagementAllowance',
+	a.FLOAT_REMARKS 'floatRemarks',
+	a.OTHER_SALES_COMMISSION 'otherSalesCommission',
+	a.MARK 'mark'
+	from t_sly_sale_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+	and a.work_number = #{workNumber}
+	order by a.SLY_SALE_COMMISSION_ID desc
+</select>
+ <select id="querySaleCommissionDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_sale_commission a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+    <select id="queryGuojinCommissionDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select 
+		a.SLY_GUOJIN_COMMISSION_ID 'slyGuojinCommissionId',
+		a.SLY_SALARY_ID 'slySalaryId',
+		a.MONTH 'month',
+		a.WORK_NUMBER 'workNumber',
+		a.CUST_NAME 'custName',
+		a.ACCOUNT 'account',
+		a.ESTABLISH_DATE 'establishDate',
+		a.MARKET_VALUE_MAX 'marketValueMax',
+		a.PERSONAL_VALUE_MAX 'personalValueMax',
+		a.TRADE_AMOUNT 'tradeAmount',
+		a.DISTRIBUTE_NET_VALUE 'distributeNetValue',
+		a.CHANNEL 'channel',
+		a.REMARKS 'remarks',
+		a.CUST_RELATION 'custRelation'
+		from t_sly_guojin_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		and a.work_number = #{workNumber}
+		order by a.SLY_GUOJIN_COMMISSION_ID desc
+</select>
+ <select id="queryGuojinCommissionDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_guojin_commission a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+     <select id="queryOverseasCommissionDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select 
+		a.sly_overseas_commission_id 'slyOverseasCommissionId',
+		a.sly_salary_id 'slySalaryId',
+		a.month 'month',
+		a.WORK_NUMBER 'workNumber',
+		a.organization 'organization',
+		a.product_side 'productSide',
+		a.product_plan 'productPlan',
+		a.purchase_date 'purchaseDate',
+		a.in_pay 'inPay',
+		a.agent_name 'agentName',
+		a.first_commission_rate 'firstCommissionRate',
+		a.first_commission 'firstCommission',
+		a.settle_commission 'settleCommission',
+		a.insurance_policy_no 'insurancePolicyNo',
+		a.applicant_name 'applicantName',
+		a.recognizee_name 'recognizeeName',
+		a.CHANNEL 'channel',
+        a.remark 'remark'
+		from t_sly_overseas_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		and a.work_number = #{workNumber}
+		order by a.sly_overseas_commission_id desc
+</select>
+ <select id="queryOverseasCommissionDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_overseas_commission a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+     <select id="queryReissueDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select
+		a.sly_reissue_id 'slyReissueId',
+		a.sly_salary_id 'slySalaryId',
+		a.month 'month',
+		a.WORK_NUMBER 'workNumber',
+		a.organization 'organization',
+		a.product_name 'productName',
+		a.product_create_date 'productCreateDate',
+		a.agent_name 'agentName',
+		a.team_director 'teamDirector',
+		a.customer_name 'customerName',
+		a.customer_type 'customerType',
+		a.scale 'scale',
+		a.duration 'duration',
+		a.gauge_standard 'gaugeStandard',
+		a.commission_rate 'commissionRate',
+		a.reissue_commission 'reissueCommission',
+		a.reissue_allowance 'reissueAllowance',
+		a.reissue_added_bonus 'reissueAddedBonus',
+		a.RECOMMOEND_NAME 'recommoendName',
+		a.CHANNEL 'channel',
+		a.remarks 'remarks'
+		from t_sly_reissue a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		and a.work_number = #{workNumber}
+		order by a.sly_reissue_id
+</select>
+ <select id="queryReissueDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_reissue a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+    <select id="queryWithholdDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select
+		a.sly_withhold_id 'slyWithholdId',
+		a.sly_salary_id 'slySalaryId',
+		a.month 'month',
+		a.WORK_NUMBER 'workNumber',
+		a.organization 'organization',
+		a.product_name 'productName',
+		a.product_create_date 'productCreateDate',
+		a.agent_name 'agentName',
+		a.team_director 'teamDirector',
+		a.customer_name 'customerName',
+		a.customer_type 'customerType',
+		a.scale 'scale',
+		a.duration 'duration',
+		a.gauge_standard 'gaugeStandard',
+		a.commission_rate 'commissionRate',
+		a.withhold_commission 'withholdCommission',
+		a.withhold_allowance 'withholdAllowance',
+		a.withhold_added_bonus 'withholdAddedBonus',
+		a.CHANNEL 'channel',
+		a.RECOMMOEND_NAME 'recommoendName',
+		a.remarks 'remarks'
+		from t_sly_withhold a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		and a.work_number = #{workNumber}
+		order by a.sly_withhold_id
+</select>
+ <select id="queryWithholdDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_withhold a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+    <select id="queryProjectCommissionDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select 
+		a.SLY_PROJECT_COMMISSION_ID 'slyProjectCommissionId',
+		a.sly_salary_id 'slySalaryId',
+		a.month 'month',
+		a.WORK_NUMBER 'workNumber',
+		a.PRODUCT_NAME 'productName',
+		a.COMPANY_FIX_INCOME 'companyFixIncome',
+		a.COMPANY_FLOAT_INCOME 'companyFloatIncome',
+		a.PROJECT_IMPORT_PERSON 'projectImportPerson',
+		a.FIRST_ISSUE_RATE 'firstIssueRate',
+		a.ACTUAL_FIRST_ISSUE_AMOUNT 'actualFirstIssueAmount',
+		a.SECOND_ISSUE_RATE 'secondIssueRate',
+		a.ACTUAL_SECOND_ISSUE_AMOUNT 'actualSecondIssueAmount',
+		a.LAST_ISSUE_RATE 'lastIssueRate',
+		a.CHANNEL 'channel',
+		a.NEW_INCOME_AFERT_TAX 'newIncomeAfertTax',
+		a.ISSUE_RATE_WAY 'issueRateWay',
+		a.ISSUE_RATE 'issueRate',
+		a.SEND_COMMISSION 'sendCommission',
+		a.OTHER_COMMISSION 'otherCommission',
+		a.REMARKS 'remarks',
+		a.ACTUAL_LAST_ISSUE_AMOUNT 'actualLastIssueAmount'
+		from t_sly_project_commission a
+		where 1=1
+		and a.RC_STATE = 'E'
+		and a.month = #{month}
+		and a.work_number = #{workNumber}
+		order by a.SLY_PROJECT_COMMISSION_ID
+</select>
+ <select id="queryProjectCommissionDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_project_commission a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+    <select id="queryGeneralSalary" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	SELECT a.SLY__BASE_SALARY_ID 'slyBaseSalaryId',
+	a.month 'month',
+  	(	SELECT x.AGENT_NAME
+		from t_agent x
+		WHERE x.RC_STATE = 'E'
+		and x.AGENT_CODE = #{workNumber}) 'agentName',
+	IFNULL(a.BASE_SALARY,0) 'generalBaseSalary',
+	IFNULL(a.TAX_FEE,0) 'taxFee',
+	IFNULL(a.ACTUAL_SALARY,0) 'actualSalary',
+	IFNULL(a.SALARY_OF_THEORY,0) 'theroySalary',
+	'佣金总览' AS 'commissionAmount'
+	from t_sly_base_salary a
+	where 1=1
+    and a.RC_STATE = 'E'
+    and a.month <![CDATA[>=]]> #{month}
+    <if test="endMonth != null and endMonth !=''" >
+      		 AND a.month <![CDATA[<=]]>#{endMonth}
+    </if>
+	and a.work_number = #{workNumber}
+	ORDER BY a.SLY__BASE_SALARY_ID desc
+</select>
+ <select id="queryGeneralSalaryCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_base_salary a
+    where 1=1
+    and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    
+     <select id="queryGeneralBaseSalaryList" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	 SELECT a.SLY__BASE_SALARY_ID 'slyBaseSalaryId',
+	a.sly_salary_id 'slySalaryId',
+	a.`MONTH` 'month',
+	a.DEPARTMENT 'department',
+	a.POST 'post',
+	a.WORK_NUMBER 'workNumber',
+	a.CHN_NAME 'chnName',
+	a.BASE_SALARY 'baseSalary',
+	a.BUSSINESS_BONUS 'bussinessBonus',
+	a.LUNCH_ALLOWNACE 'lunchAllownace',
+	a.HIHG_TEP_FEE 'hihgTepFee',
+	a.ABSENCE_FEE 'absenceFee',
+	a.OTHER 'other',
+	a.SALARY_OF_THEORY 'salaryOfTheory',
+	a.PENSION 'pension',
+	a.MEDICARE 'medicare',
+	a.UNEMPLOYMENT 'unemployment',
+	a.ACCUMULATION_FUND 'accumulationFund',
+	a.TAX_FEE 'taxFee',
+	a.PERSONAL_TAX 'personalTax',
+	a.ACTUAL_SALARY 'actualSalary'
+	from t_sly_base_salary a
+	where 1=1
+	and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+	order by a.SLY__BASE_SALARY_ID desc
+</select>
+ <select id="queryGeneralBaseSalaryListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_base_salary a
+	where 1=1
+	and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+    </select>
+    <!-- 查询员工工资卡信息 -->
+    <select id="getAgentAccInfoList" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT 
+			a.AGENT_ACC_INFO_ID 'agentAccInfoId',
+			a.BANK_CODE 'bankCode',
+			(
+					SELECT
+						CONCAT(B.BANK_CODE, '-', BANK_NAME)
+					FROM
+						T_DEF_BANK B
+					WHERE
+						B.BANK_ID = a.BANK_CODE
+				) 'bankName',
+			a.BRANCH_BANK_NAME 'branchBankName',
+			a.ACC_NAME 'accName',
+			a.BANK_ACC_NO 'bankAccNo'
+		FROM t_agent_acc_info a
+			WHERE 1=1
+			AND a.AGENT_ID = #{agentId}
+			AND a.RC_STATE = 'E'
+			ORDER BY a.AGENT_ACC_INFO_ID
+    </select>
+    <!-- 查询员工信息 -->
+ <select id="getAgentsInfo" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT
+			(@rowNum:=@rowNum+1) as "serialNo",
+			t.*
+			FROM(
+			SELECT 
+			(SELECT x.DEPARTMENT_NAME
+			from t_def_department x
+			where x.DEPARTMENT_ID = a.DEPARTMENT_ID
+			and x.RC_STATE = 'E') 'department',
+			(
+					SELECT
+						FUNC_GET_CODE_NAME (
+							'positionCode',
+							y.POSITION_CODE
+						)
+					FROM
+						T_AGENT_POSITION_TRACE y
+					WHERE
+						y.AGENT_ID = a.AGENT_ID
+					AND y.RC_STATE = 'E'
+					AND y.START_DATE = (
+						SELECT
+							MAX(START_DATE)
+						FROM
+							T_AGENT_POSITION_TRACE z
+						WHERE
+							z.AGENT_ID = y.AGENT_ID
+						AND z.RC_STATE = 'E'
+					)
+				) 'position',
+			a.AGENT_CODE 'workNumber',
+			a.AGENT_NAME 'chnName',
+			(
+					SELECT
+						FUNC_GET_CODE_NAME (
+							'gradeCode',
+							y.GRADE_CODE
+						)
+					FROM
+						T_AGENT_POSITION_TRACE y
+					WHERE
+						y.AGENT_ID = a.AGENT_ID
+					AND y.RC_STATE = 'E'
+					AND y.START_DATE = (
+						SELECT
+							MAX(START_DATE)
+						FROM
+							T_AGENT_POSITION_TRACE z
+						WHERE
+							z.AGENT_ID = y.AGENT_ID
+						AND z.RC_STATE = 'E'
+					)
+				) 'grade',
+			(SELECT m.COM_NAME
+			FROM t_def_com m
+			WHERE m.COM_ID = a.COM_ID
+			AND m.RC_STATE = 'E') 'comName',
+			a.WORK_ADRESS 'workAdress',
+			a.SSY_ADRESS 'ssyAdress',
+			FUNC_GET_CODE_NAME('rgtType',a.HOUSEHOLD_NATURE) 'houseHoldNature',
+			a.MOBILE 'mobile',
+			a.EMAIL 'email',
+			FUNC_GET_CODE_NAME('sex',a.SEX) 'gender',
+			a.IDNO 'idNo',
+			DATE_FORMAT(a.BIRTHDAY,'%Y') 'birthYear',
+			YEAR(CURDATE())-YEAR(a.BIRTHDAY) 'age',
+			a.RGTADRESS 'hukouPlace',
+			a.BIRTHDAY 'birthDate',
+			a.JOIN_DATE 'workDate',
+			a.PROBATIONPERIOD_END_DATE 'probarionPeriodEndDate',
+			c.CONTRACT_START_DATE 'contractStartDate',
+			c.CONTRACT_END_DATE 'contractEndDate',
+			CASE WHEN c.CONTRACT_END_DATE IS NULL
+			THEN NULL
+			ELSE YEAR(c.CONTRACT_END_DATE)-YEAR(c.CONTRACT_START_DATE) END 'contractYear',
+			FUNC_GET_CODE_NAME('degree',a.DEGREE) 'educationBackground',
+			a.GRADUATE 'school',
+			a.PROFESSION 'profession',
+			(SELECT x.BANK_ACC_NO
+			FROM t_agent_acc_info x
+			WHERE x.AGENT_ID = a.AGENT_ID
+			AND x.RC_STATE = 'E'
+			AND x.AGENT_ACC_INFO_ID = (
+			SELECT MAX(y.AGENT_ACC_INFO_ID)
+			FROM t_agent_acc_info y
+			WHERE x.AGENT_ID = y.AGENT_ID
+			AND y.RC_STATE = 'E')) 'bankAccNo',
+			(SELECT Z.BANK_NAME
+			FROM t_def_bank z
+			WHERE z.BANK_ID = (SELECT x.BANK_CODE
+			FROM t_agent_acc_info x
+			WHERE x.AGENT_ID = a.AGENT_ID
+			AND x.RC_STATE = 'E'
+			AND x.AGENT_ACC_INFO_ID = (
+			SELECT MAX(y.AGENT_ACC_INFO_ID)
+			FROM t_agent_acc_info y
+			WHERE x.AGENT_ID = y.AGENT_ID
+			AND y.RC_STATE = 'E'))) 'bankName',
+			FUNC_GET_CODE_NAME('certificationType',b.CERTIFICATION_TYPE) 'certification'
+			from t_agent a LEFT JOIN t_agent_certification_info b ON b.AGENT_ID = a.AGENT_ID and b.RC_STATE = 'E'
+			LEFT JOIN t_agent_other_info c ON c.AGENT_ID = a.AGENT_ID and c.RC_STATE = 'E'
+			where 1=1
+			and a.RC_STATE = 'E'
+			<!-- and a.WORK_STATE = '1' -->
+			<include refid="queryAgentListCondition"/>
+			GROUP BY a.AGENT_ID
+			) t,
+			(SELECT @rowNum := 0) T4
+			ORDER BY serialNo
+ </select>
+ <!-- 佣金明细表查询总数 -->
+ <select id="querydetailsCommissionIdListCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+    </select>
+  <!-- 佣金明细表查询 -->
+	<select id="querydetailsCommissionIdList" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	select tAlias.*
+	from (select nAlias.*,@rownum:=@rownum+1
+	r_rownum
+	from (
+	select distinct (SELECT @rownum := 0),
+	a.SLY_COMMISSION_ID 'slyCommissionId',
+	a.SLY_SALARY_ID 'slySalaryId',
+	a.`month` 'month',
+	a.work_number 'workNumber',
+	a.COM_NAME 'comName',
+	a.CHN_NAME 'chnName',
+	a.SALE_COMMISSION 'saleCommission',
+	a.MANAGEMENT_ALLOWANCE 'managementAllowance',
+	a.ADD_BONUS 'addBonus',
+	a.SERVICE_ALLOWANCE 'serviceAllowance',
+	a.GUOJIN_COMMISSION 'guojinCommission',
+	a.PROJECT_COMMISSION 'projectCommission',
+	a.REISSUE_COMMISION 'reissueCommision',
+	a.WITHHOLD_COMMISSION 'withholdCommission',
+	a.ZHANYE_COMMISSION 'zhanyeCommission',
+	a.OTHER_COMMISSION 'otherCommission',
+	a.COMMISSION_AMOUNT 'commissionAmount',
+	a.ADD_TO_SALARY 'addToSalary',
+	a.REMAIN_COMMISSION 'remainCommission',
+	a.OVERSEAS_COMMISSION 'overseasCommission',
+	a.CHANNEL 'channel',
+	a.FLOAT_INCOME 'floatIncome',
+	a.LAST_MONTH_REMAINING 'lastMonthRemaining',
+	a.REMARK 'remark'
+	from t_sly_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+	ORDER BY a.SLY_COMMISSION_ID desc) nAlias) tAlias
+	where
+	r_rownum >=
+	#{startIndex}
+	and
+	#{endIndex} >= r_rownum
+</select>
+
+<!-- 佣金明细表查询总数 -->
+ <select id="querySlyCommissionDetailCount" parameterType="java.util.Map"
+	resultType="java.lang.Integer">
+	SELECT count(1)
+	from t_sly_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+	and a.month = #{month}
+    </select>
+    <!-- 佣金总额查询明细 -->
+    <select id="querySlyCommissionDetail" parameterType="java.util.Map"
+	resultType="java.util.Map">
+	 SELECT 
+	a.SLY_COMMISSION_ID 'slyCommissionId',
+	a.SLY_SALARY_ID 'slySalaryId',
+	a.`month` 'month',
+	a.work_number 'workNumber',
+	a.COM_NAME 'comName',
+	a.CHN_NAME 'chnName',
+	a.SALE_COMMISSION 'saleCommission',
+	a.MANAGEMENT_ALLOWANCE 'managementAllowance',
+	a.ADD_BONUS 'addBonus',
+	a.SERVICE_ALLOWANCE 'serviceAllowance',
+	a.GUOJIN_COMMISSION 'guojinCommission',
+	a.PROJECT_COMMISSION 'projectCommission',
+	a.REISSUE_COMMISION 'reissueCommision',
+	a.WITHHOLD_COMMISSION 'withholdCommission',
+	a.ZHANYE_COMMISSION 'zhanyeCommission',
+	a.OTHER_COMMISSION 'otherCommission',
+	a.COMMISSION_AMOUNT 'commissionAmount',
+	a.ADD_TO_SALARY 'addToSalary',
+	a.REMAIN_COMMISSION 'remainCommission',
+	a.OVERSEAS_COMMISSION 'overseasCommission',
+	a.FLOAT_INCOME 'floatIncome',
+	a.LAST_MONTH_REMAINING 'lastMonthRemaining',
+	a.CHANNEL 'channel',
+	a.REMARK 'remark'
+	from t_sly_commission a
+	where 1=1
+	and a.RC_STATE = 'E'
+    and a.month = #{month}
+	and a.work_number = #{workNumber}
+	order by a.SLY_COMMISSION_ID desc
+</select>
+</mapper>

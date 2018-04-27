@@ -1,0 +1,18 @@
+/* global */
+body.cis-body {
+height: 100%;
+background: #2c4762 url('/img/background.png') top repeat-x;
+font: normal 14px/1.4 "Helvetica Neue","HelveticaNeue",Helvetica,Arial,sans-serif;
+color: #444;
+margin: 0;
+padding: 0;
+}
+
+#logo a {
+display: block;
+overflow: hidden;
+text-indent: -999em;
+height: 100%;
+background-image: url('/img/logo.png');
+background-repeat: no-repeat;
+}

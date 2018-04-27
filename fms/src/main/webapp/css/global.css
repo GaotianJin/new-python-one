@@ -1,0 +1,64 @@
+@CHARSET "utf-8";
+
+html,body,address,blockquote,div,dl,form,h1,h2,h3,h4,h5,h6,ol,p,pre,table,ul,dd,dt,li,tbody,td,tfoot,th,thead,tr,button,del,ins,map,object,a,abbr,acronym,b,bdo,big,br,cite,code,dfn,em,i,img,kbd,q,samp,small,span,strong,sub,sup,tt,var,legend,fieldset,textarea
+{
+	margin: 0;
+	padding: 0;
+}
+
+img,fieldset {
+	border: 0;
+}
+
+/* set image max width to 100% */
+img {
+	max-width: 100%;
+	height: auto;
+	width: auto\9; /* ie8 */
+}
+
+/* set html5 elements to block */
+article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section
+{
+	display: block;
+}
+
+ul,li,p,h3,h2,h1,samp,label,dl,dt,dd,sup,sub{ 
+	list-style:none outside none;
+}
+
+body {
+	font: 12px "宋体","Microsoft Yahei",arial,serif;
+}
+
+a{
+	text-decoration: none;
+}
+/* 页面横向边界 */
+.h_layout{
+	width:1000px;
+	margin:0 auto;
+	height:100%;
+}
+
+.click_btn::selection { background-color:rgba(255,255,255,0);}
+.click_btn::-moz-selection {  background-color:rgba(255,255,255,0);} 
+.click_btn::-webkit-selection {  background-color:rgba(255,255,255,0);}
+
+.click_btn{
+	position:relative;
+}
+
+
+.clearfix {
+	clear: both;
+}
+
+input,select{
+	outline:none;
+}
+
+.message{
+	color:red;
+	font: 12px "宋体","Microsoft Yahei",arial,serif;
+}

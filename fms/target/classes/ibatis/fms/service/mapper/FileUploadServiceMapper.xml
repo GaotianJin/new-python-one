@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fms.service.mapper.FileUploadServiceMapper" >
+	<sql id="getFileListCondition">
+		<if test="businessNo != null and businessNo !=''" >
+      		AND A.BUSINESS_NO = #{businessNo}
+    	</if>
+    	<if test="businessType != null and businessType !=''" >
+      		AND A.BUSINESS_TYPE = #{businessType}
+    	</if>
+    	<if test="businessSubType != null and businessSubType !=''" >
+      		AND A.BUSINESS_SUB_TYPE = #{businessSubType}
+    	</if>
+    	
+  	</sql>
+  	<select id="getFileListByBuisnessNoAndType" resultType="java.util.Map" parameterType="java.util.Map">
+  	
+  	<!--s-->
+  		select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+         		SELECT (SELECT @rownum := 0),
+         		       A.FILE_INFO_ID "fileInfoId",
+				       A.BUSINESS_NO "businessNo",
+				       A.BUSINESS_TYPE "businessType",
+				       FUNC_GET_CODE_NAME('businessType',A.BUSINESS_TYPE) "businessTypeName",
+				       A.Business_Sub_Type "businessSubType",
+               		   CONCAT(A.BUSINESS_SUB_TYPE,'-',FUNC_GET_CODE_NAME('businessSubType',A.Business_Sub_Type)) "businessSubTypeName",
+				       A.UPLOAD_FILE_NAME "uploadFileName",
+				       A.FILE_NAME "fileName",
+				       A.FILE_SAVE_PATH "fileSavePath",
+				       A.FILE_DESCRIBE "fileDescribe"
+				FROM T_DEF_FILE_INFO A
+				WHERE 1=1
+				<include refid="getFileListCondition"/>
+				AND A.RC_STATE = 'E'
+				order by A.FILE_INFO_ID desc
+ 			) nAlias
+		) tAlias where  r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+  	</select>
+  	
+  	<select id="getFileListByBuisnessNoAndTypeCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+       	SELECT count(1)
+		FROM T_DEF_FILE_INFO A
+		WHERE 1=1
+		<include refid="getFileListCondition"/>
+		AND A.RC_STATE = 'E'
+  	</select>
+  	
+  	<select id="getFileListByBuisnessNoAndTypeControl" resultType="java.util.Map" parameterType="java.util.Map">
+  	
+  	<!--s-->
+  		select tAlias.* from(
+         	select nAlias.*, @rownum:=@rownum+1 r_rownum from
+         	(
+         		SELECT (SELECT @rownum := 0),
+         		       A.FILE_INFO_ID "fileInfoId",
+				       A.BUSINESS_NO "businessNo",
+				       A.BUSINESS_TYPE "businessType",
+				       CONCAT(A.BUSINESS_TYPE,'-',FUNC_GET_CODE_NAME('businessType',A.BUSINESS_TYPE))"businessTypeName",
+				       A.Business_Sub_Type "businessSubType",
+               		   CONCAT(A.BUSINESS_SUB_TYPE,'-',FUNC_GET_CODE_NAME('businessSubType',A.Business_Sub_Type)) "businessSubTypeName",
+				       A.UPLOAD_FILE_NAME "uploadFileName",
+				       A.FILE_NAME "fileName",
+				       A.FILE_SAVE_PATH "fileSavePath",
+				       A.FILE_DESCRIBE "fileDescribe"
+				FROM T_DEF_FILE_INFO A
+				WHERE 1=1
+				and BUSINESS_TYPE = '09'
+                and BUSINESS_SUB_TYPE = '6'
+				<include refid="getFileListCondition"/>
+				AND A.RC_STATE = 'E'
+				order by A.FILE_INFO_ID desc
+ 			) nAlias
+		) tAlias where  r_rownum >=#{startIndex} and #{endIndex} >= r_rownum
+  	</select>
+  	
+  	<select id="getFileListByBuisnessNoAndTypeControlCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+       	SELECT count(1)
+		FROM T_DEF_FILE_INFO A
+		WHERE 1=1
+		<include refid="getFileListCondition"/>
+		AND A.RC_STATE = 'E'
+		and BUSINESS_TYPE = '09'
+        and BUSINESS_SUB_TYPE = '6'
+  	</select>
+</mapper>

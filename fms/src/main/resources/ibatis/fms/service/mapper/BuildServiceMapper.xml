@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.fms.service.mapper.BuildServiceMapper">
+	
+	
+  	<sql id="branchBuildListCondition">
+  		<if test="buildingCode != null and buildingCode !=''" >
+      		AND TDB.BUILDING_CODE like '%${buildingCode}%'
+    	</if>
+    	<if test="buildingName != null and buildingName !=''" >
+      		AND TDB.BUILDING_NAME like '%${buildingName}%'
+    	</if>
+    	<if test="buildingType != null and buildingType !=''" >
+      		AND TDB.BUILDING_TYPE = #{buildingType}
+    	</if>
+    	<if test="estateType != null and estateType !=''" >
+      		AND TDB.ESTATE_TYPE = #{estateType}
+    	</if>
+    	<if test="avgPriceFrom != null and avgPriceFrom !=''" >
+      		AND TDB.AVGPRICE >= #{avgPriceFrom}
+    	</if>
+    	<if test="avgPriceEnd != null and avgPriceEnd !=''" >
+      		AND #{avgPriceEnd} >= TDB.AVGPRICE 
+    	</if>
+  	</sql>
+  	
+    <select id="branchBuildListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT 
+			COUNT(1)
+		FROM 
+			T_DEF_BUILDING TDB
+		WHERE 
+			1=1 
+		AND 
+			TDB.RC_STATE = 'E'
+		<include refid="branchBuildListCondition"/>
+    </select> 
+    <!-- 
+    <select id="branchStoreCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+    	SELECT 
+			COUNT(*)
+		FROM 
+			t_def_store tds
+		where
+			tds.BUILDING_ID = #{id}
+		and
+			tds.RC_STATE="E"
+    </select>
+     -->
+    <select id="branchBuildListPage" parameterType="java.util.Map" resultType="java.util.Map">
+    
+    <!--s-->
+  		select 
+  			tAlias.* 
+  		from
+  			(
+         		select 
+         			nAlias.*, 
+         			@rownum:=@rownum+1  r_rownum
+         		from
+         			(
+         				SELECT 
+         				    (SELECT @rownum := 0),
+         					TDB.BUILDING_ID "buildingId",
+       						TDB.BUILDING_CODE "buildingCode",
+       						TDB.BUILDING_NAME "buildingName",
+       						TDB.BUILDING_TYPE "buildingType",
+       						FUNC_GET_CODE_NAME('buildingtype', TDB.BUILDING_TYPE) "buildingTypeName",
+      		 				TDB.STAY_NUM "stayNum",
+       						TDB.ESTATE_TYPE "estateType",
+       						FUNC_GET_CODE_NAME('estatetype', TDB.ESTATE_TYPE) "estateTypeName",
+       						TDB.STAY_RATE "stayRate",
+       						TDB.DEVELOPER "developer",
+       						TDB.AVGPRICE "avgPrice",
+   						<!-- TDB.PROVINCE "province",
+        						TDB.CITY "city", -->
+       						TDB.COUNTRY "country",
+       						TDB.STREET "street",
+       						CONCAT(
+						IFNULL(TDAP.PLACE_NAME,''),
+						IFNULL(TDAPC.PLACE_NAME,''),
+						IFNULL(TDAPCC.PLACE_NAME,''),
+						IFNULL(TDB.STREET,'')
+					) "address",
+       						TDB.ZIP_CODE "zipCode"
+  						FROM 
+  							T_DEF_BUILDING TDB
+  						LEFT JOIN 
+  							T_DEF_ADDRESS TDAP
+    					ON 
+    						TDAP.PLACE_CODE = TDB.PROVINCE
+   						AND 
+   							TDAP.PLACE_TYPE = '01'
+  						LEFT JOIN 
+  							T_DEF_ADDRESS TDAPC
+    					ON 
+    						TDAPC.PLACE_CODE = TDB.CITY
+   						AND 
+   							TDAPC.PLACE_TYPE = '02'
+  						LEFT JOIN 
+  							T_DEF_ADDRESS TDAPCC
+    					ON 
+    						TDAPCC.PLACE_CODE = TDB.COUNTRY
+   						AND 
+   							TDAPCC.PLACE_TYPE = '03'
+   						WHERE 
+   							1 = 1
+   						AND 
+   							RC_STATE != 'D'
+						<include refid="branchBuildListCondition"/>
+						ORDER BY 
+                 			TDB.MODIFY_DATE DESC
+ 					) nAlias
+			) tAlias 
+		where 
+		r_rownum >=#{startIndex} 
+		and 
+			#{endIndex} >= r_rownum 
+    </select> 
+    
+    <!-- 楼盘信息列表查询（全部） -->
+	<select id="queryBuildListCode" resultType="java.util.Map" parameterType="java.util.Map" >
+	
+	<!--s-->
+        select 
+			building_Id	"id",									<!-- 楼盘编码 -->
+			
+			CONCAT(building_code,'-',building_name) "name"			<!-- 楼盘名称 -->
+		from 
+			t_def_building tdb
+		where 
+			rc_state='E'
+	</select>
+</mapper>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.fms.service.mapper.DepartmentServiceMapper"><!-- 业务部信息列表查询（全部） -->
+	
+	<sql id="branchDepartmentListCondition">
+  		<if test="comId != null and comId !=''" >
+      		AND A.COM_ID = #{comId}
+    	</if>
+    	<if test="departmentId != null and departmentId !=''" >
+      		AND A.DEPARTMENT_ID = #{departmentId} 
+    	</if>
+  	</sql>
+	
+	<!-- 业务部所有信息信息查询 -->
+	<select id="branchDepartmentListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM t_def_department A,
+			t_def_com		B
+		WHERE 1=1
+		AND A.RC_STATE = 'E'
+		AND
+			B.COM_ID=A.COM_ID
+		AND 
+			B.RC_STATE='E'
+		<include refid="branchDepartmentListCondition"/>
+    </select> 
+	
+	<!-- 业务部页码信息 -->
+	<select id="branchDepartmentListPage" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	<!--s-->
+  		select 
+  			tAlias.* 
+  		from(
+         	select 
+         		nAlias.*, 
+         			@rownum:=@rownum+1  r_rownum
+         	from
+         	(
+         		SELECT 
+         		    (SELECT @rownum := 0),
+         			A.DEPARTMENT_ID "departmentId",
+         			A.COM_ID "comId",
+         			CONCAT(B.COM_CODE,'-',B.COM_NAME) "comIdName",
+         			A.DEPARTMENT_CODE "departmentCode",
+         			A.DEPARTMENT_NAME "departmentName",
+         			A.STATE "state",
+         				FUNC_GET_CODE_NAME('state', A.STATE) "stateName",
+         			date_format(A.FOUND_DATE,'%Y-%m-%d') "foundDate",
+         			date_format(A.END_DATE,'%Y-%m-%d') "endDate",
+         			<!-- A.MANAGER_NAME "managerName", -->
+         			<!-- 获取团队长姓名 -->
+         			(
+						SELECT  
+							d.agentName
+						FROM
+							t_def_department e,
+							(
+								SELECT
+									a.department_id department,
+									max(b.agent_name) agentName
+								FROM
+									t_agent_department a,
+									t_agent b
+								WHERE
+									a.agent_id = b.agent_id
+								AND b.rc_state = 'E'
+								AND a.rc_state = 'E'
+								AND a.isleader = 'Y'
+								GROUP BY
+									a.department_id
+							) d
+						WHERE
+							A.rc_state = 'E'
+						AND d.department = A.department_id
+						AND e.department_id = A.department_id
+						AND e.rc_state = 'E'
+					) "managerName",
+         			<!-- A.MANAGER_MOBILE "managerMobile", -->
+         			<!-- 获取团队长手机 号-->
+         		   (
+                     SELECT   DISTINCT
+							d.managerMobile 
+						    FROM
+							t_def_department e,
+							(
+								SELECT
+									a.department_id department,
+									max(b.MOBILE) managerMobile
+								FROM
+									t_agent_department a,
+									t_agent b
+								WHERE
+									a.agent_id = b.agent_id
+								AND b.rc_state = 'E'
+								AND a.rc_state = 'E'
+								AND a.isleader = 'Y'
+								GROUP BY
+									a.department_id
+							) d,t_agent C
+						WHERE
+						C.rc_state = 'E'
+	                    AND e.rc_state = 'E'
+						AND d.department = C.department_id
+						AND e.department_id = C.department_id
+                        AND C.department_id=A.department_id
+                    )"managerMobile",
+         			
+         			A.BELONG_START_DATE "belongStartDate",
+         			A.BELONG_END_DATE "belongEndDate",
+         			A.RC_STATE "rcState",
+         			A.CREATE_DATE "createDate",
+         			A.MODIFY_DATE "modifyDate",
+         			A.OPER_COM_ID "operComId",
+         			A.CREATE_USER_ID "createUserId",
+         			A.MODIFY_USER_ID "modifyUserId"
+         			
+				FROM 
+					t_def_department A  ,
+					t_def_com		B
+				WHERE 
+					1=1 
+					AND 
+					A.RC_STATE = 'E'
+					and
+					B.COM_ID=A.COM_ID
+					AND 
+					B.RC_STATE='E'
+				<include refid="branchDepartmentListCondition"/>
+				ORDER BY 
+				    A.MODIFY_DATE DESC
+ 			) nAlias
+		) tAlias where 	r_rownum  >=#{startIndex} and #{endIndex} >= r_rownum
+    </select> 
+	
+	<!-- 业务部下拉项信息查询 -->
+	<select id="queryDepartmentListCode" resultType="java.util.Map" parameterType="java.util.Map" >
+	
+	<!--s-->
+	
+        select 
+			department_Id	"id",									<!-- 业务部编码 -->
+			CONCAT(department_code,'-',department_name)	"name"			<!-- 业务部名称 -->
+		from t_def_department
+		where rc_state='E'
+	</select>
+
+	<select id="queryDepartmentBelongListInfo" resultType="java.util.Map" parameterType="java.util.Map">
+	
+	<!--s-->
+
+		select
+			CONCAT(tdc.com_code,'-',tdc.com_name )	"belongComName",
+			tdd.belong_start_date 				"startDate",
+			tdd.belong_end_date 				"endDate"
+		from
+			t_def_department tdd
+		left join
+			t_def_com tdc
+		on 
+			tdd.com_id = tdc.com_id 
+		where 
+			tdd.department_id=#{departmentId} and tdd.rc_state='E'
+
+					<!-- 
+     select tdc.com_name  "belongComName",
+             t1.belong_start_date"startDate",
+             t1.belong_end_date   "endDate"
+        from t_def_department t1, t_def_department t2, t_def_com tdc
+       where (t1.belong_end_date + 1) = t2.belong_start_date
+         and t1.com_id = tdc.com_id
+         and t1.rc_state = 'D'
+         and t1.department_code = 'SH0040'
+         		 -->
+	</select>
+</mapper>

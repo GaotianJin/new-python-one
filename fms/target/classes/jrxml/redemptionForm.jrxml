@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="redemptionForm" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f34fbbf0-1bfa-4530-816a-b072225c5e30">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="674"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="ACCNAME" class="java.lang.String">
+		<fieldDescription><![CDATA[ACCNAME]]></fieldDescription>
+	</field>
+	<field name="ADDRESS" class="java.lang.String">
+		<fieldDescription><![CDATA[ADDRESS]]></fieldDescription>
+	</field>
+	<field name="AGENCYCODE" class="java.lang.String">
+		<fieldDescription><![CDATA[AGENCYCODE]]></fieldDescription>
+	</field>
+	<field name="AGENCYNAME" class="java.lang.String">
+		<fieldDescription><![CDATA[AGENCYNAME]]></fieldDescription>
+	</field>
+	<field name="AGENTCODE" class="java.lang.String">
+		<fieldDescription><![CDATA[AGENTCODE]]></fieldDescription>
+	</field>
+	<field name="AGENTNAME" class="java.lang.String">
+		<fieldDescription><![CDATA[AGENTNAME]]></fieldDescription>
+	</field>
+	<field name="BANKNAME" class="java.lang.String">
+		<fieldDescription><![CDATA[BANKNAME]]></fieldDescription>
+	</field>
+	<field name="BANKNO" class="java.lang.String">
+		<fieldDescription><![CDATA[BANKNO]]></fieldDescription>
+	</field>
+	<field name="CUSTNAME" class="java.lang.String">
+		<fieldDescription><![CDATA[CUSTNAME]]></fieldDescription>
+	</field>
+	<field name="EMAIL" class="java.lang.String">
+		<fieldDescription><![CDATA[EMAIL]]></fieldDescription>
+	</field>
+	<field name="IDNO" class="java.lang.String">
+		<fieldDescription><![CDATA[IDNO]]></fieldDescription>
+	</field>
+	<field name="IDTYPE" class="java.lang.String">
+		<fieldDescription><![CDATA[IDTYPE]]></fieldDescription>
+	</field>
+	<field name="MOBLIE" class="java.lang.String">
+		<fieldDescription><![CDATA[MOBLIE]]></fieldDescription>
+	</field>
+	<field name="PRODUCTNAME" class="java.lang.String">
+		<fieldDescription><![CDATA[PRODUCTNAME]]></fieldDescription>
+	</field>
+	<field name="REDEMPTIONAPPLYDATE" class="java.lang.String">
+		<fieldDescription><![CDATA[REDEMPTIONAPPLYDATE]]></fieldDescription>
+	</field>
+	<field name="REDEMPTIONOPENDAY" class="java.lang.String">
+		<fieldDescription><![CDATA[REDEMPTIONOPENDAY]]></fieldDescription>
+	</field>
+	<field name="REDEMPTIONSHAREBIG" class="java.lang.String">
+		<fieldDescription><![CDATA[REDEMPTIONSHAREBIG]]></fieldDescription>
+	</field>
+	<field name="REDEMPTIONSHARESMALL" class="java.lang.String">
+		<fieldDescription><![CDATA[REDEMPTIONSHARESMALL]]></fieldDescription>
+	</field>
+	<field name="ZIPCODE" class="java.lang.String">
+		<fieldDescription><![CDATA[ZIPCODE]]></fieldDescription>
+	</field>
+	<field name="CLOSEDATE" class="java.lang.String">
+		<fieldDescription><![CDATA[CLOSEDATE]]></fieldDescription>
+	</field>
+	<field name="REDEMPTIONFEE" class="java.lang.String">
+		<fieldDescription><![CDATA[REDEMPTIONFEE]]></fieldDescription>
+	</field>
+	<field name="class" class="java.lang.Class">
+		<fieldDescription><![CDATA[class]]></fieldDescription>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="801" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="01b8b72b-7da4-4583-b919-e6a7f3590547" x="156" y="23" width="137" height="25"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="16" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[赎回业务意向书]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1d14edf4-cfd1-4156-992c-d59c6af768ed" x="1" y="65" width="121" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="12" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[产品名称：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3f12b151-1ebb-4765-b140-59ef9c874574" x="282" y="23" width="104" height="25"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="14" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(个人客户适用)]]></text>
+			</staticText>
+			<image scaleImage="FillFrame">
+				<reportElement uuid="7a61dc79-8c63-4e4a-98bc-a5ef813d6718" x="1" y="0" width="136" height="48"/>
+				<imageExpression><![CDATA["jjcf.jpg"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement uuid="6d46b126-29c5-4a91-a8c7-3f84cda5c1b2" x="494" y="48" width="60" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="8" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="099bc66d-1b20-4508-818c-92beb6469470" x="1" y="228" width="554" height="182"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="3aca03ea-ffe8-49af-b7d7-e0dc211a5601" x="1" y="232" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="11" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[■受益账号信息]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="35bd2a0f-9ed4-4174-90fe-878989cf0ccc" x="1" y="251" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[户名：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="633a8597-6e1b-4fd4-b740-a6a519b02fad" x="1" y="271" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[账号：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="fa5d315c-56fd-45cf-8c0b-3dbdba41f5c2" x="0" y="292" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[开户行：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="4913da39-8614-447b-9337-833c05f7a911" x="1" y="325" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="11" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[■赎回交易申请]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="45477d98-3303-44cb-b5d2-f298f2f80973" x="1" y="344" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[产品方：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="4918255c-bdae-450f-a0cf-7cce2a4a6f09" x="273" y="345" width="50" height="22"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[产品名称：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="4264eb79-e458-4ba2-8e25-8fc804dc7221" x="394" y="366" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[赎回申请开放日：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="eeec730c-136f-41c0-8862-88bdefde71a9" x="1" y="364" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[赎回份额(大写)：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1c3062b0-110d-455d-b57f-a96f820b5b57" x="202" y="365" width="50" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(小写)：]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="e3987a86-4640-47e0-aac6-85f5f18c4a7f" x="1" y="410" width="554" height="188"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="bcc01ff6-5c10-4d79-9d4f-9f0acc7a0f7a" x="1" y="415" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="11" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[■声明]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="988315ff-b43b-49b7-968b-9095ede8a066" x="1" y="435" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="10" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[一、受益人声明]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="02417783-0aca-4977-93b5-047de5dab053" x="-1" y="455" width="553" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[本受益人保证所提供的资料和信息真实、准确且有效，并同意按合同约定的条件予以赎回。]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="018085b0-0630-4003-9e90-6a0c7df53a4d" x="1" y="475" width="100" height="23"/>
+				<textElement>
+					<font fontName="宋体" size="10" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[二、销售机构申请]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="24aa7ff3-7b80-468b-85b3-8fd5872be149" x="-1" y="498" width="553" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(1)本申请书为客户已提出赎回的指定凭证；]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="edf3e4eb-da53-4181-835d-0ad92488c74f" x="1" y="518" width="552" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(2)如发现客户所提供的资料信息不实，我司有权拒绝客户申请；]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="94c2587e-7177-41f9-8287-ebb5cafb2618" x="0" y="538" width="552" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(3)如赎回资金接收账户(受益账号)信息发生变更，受益人需向我司提供账户信息变更申请及相关证明；]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e5658c37-a022-4fb1-a6cb-aae6dde6261a" x="1" y="558" width="552" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(4)本单证由系统打印，除受益人签名外，其余手写均视为无效。]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="03b545e7-fb96-42ed-aca3-c053ceaae33b" x="1" y="578" width="121" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="11" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[受益人(自然人)签名：]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="dfe7fdec-afd3-42ce-a5f7-1153dbd681f0" x="0" y="598" width="555" height="24"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="fcded375-172a-4072-8fae-9084040c5328" x="1" y="598" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[财富顾问姓名：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="542d052c-e6c8-414b-b0c4-9ec0022c1632" x="197" y="598" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[员工编码：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="1ff6b1e8-bdd9-4412-9469-02cbdd3239ca" x="394" y="599" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[申请日期：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="bd20c4e8-499c-494e-bbc7-6163697e2930" x="0" y="622" width="553" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[单证说明：本申请书一式两份，由受益人确认单证内容无误后签字，受益人与销售机构各持一份。]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement uuid="b9a7f012-c01f-46c2-850b-9dcdfc6efc36" x="0" y="95" width="555" height="133"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="52af71f0-52d1-490b-84c6-6a7306abf5ae" x="0" y="97" width="100" height="19"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="11" isBold="true" isItalic="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[■基本信息]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0e2726c1-4faf-4f34-b606-5c33c8f9cd6a" x="0" y="116" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[受益人姓名：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d247d9f5-1a32-441d-a572-13e543784150" x="0" y="135" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[证件类型：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d0d36f5b-b1c5-4b9a-a5a5-700eaa0a8e82" x="0" y="154" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[联系地址：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5c099faa-9388-48c8-a958-250f39a342e2" x="0" y="174" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[移动电话：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="999665e4-3f2f-4aaf-a659-0d11c951e7c9" x="0" y="210" width="554" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(上述信息若不正确，请及时联系财务顾问进行修改。)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3f5d70fd-5508-4e4d-b8a4-fa60e1aa2f86" x="156" y="177" width="398" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(请您仔细核对移动电话是否正确，资金到账、产品购买成功等重要信息会通过短信发送给您)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="b087f8cb-380c-42a3-b18e-7d516ead0b29" x="0" y="194" width="99" height="17"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[电子邮箱：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f1786581-60c3-4308-b041-33f0525ea381" x="333" y="118" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[邮编：]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="12996f03-287b-4534-909b-e9ed83e53c96" x="156" y="196" width="399" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[(请您仔细核对电子邮箱是否正确，资金管理报告等重要信息会通过电子邮箱发送给您)]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="885553f0-8e31-4fa4-928e-319465dd70af" x="68" y="65" width="199" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="11" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCTNAME}==null?"未提供":$F{PRODUCTNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f9266344-5b42-4b9a-b238-10f703e7bc5e" x="58" y="114" width="95" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUSTNAME}==null?"未提供":$F{CUSTNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e5ec621c-18e5-437a-ab9e-4f278580b57a" x="58" y="134" width="95" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{IDTYPE}==null?"未提供":$F{IDTYPE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="2f9e531b-1ae5-40a6-b2b7-37a8db365ba3" x="333" y="138" width="100" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[证件号码：]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="21bcf9ac-9680-4fbc-bde3-ad0c2d8c9ac5" x="386" y="138" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{IDNO}==null?"未提供":$F{IDNO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="1c9988fd-d80a-4668-9f26-757659597fc5" x="58" y="155" width="336" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ADDRESS}==null?"未提供":$F{ADDRESS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="b2e84da2-8921-4f20-b673-fb258d277e58" x="386" y="118" width="100" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ZIPCODE}==null?"未提供":$F{ZIPCODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="e684bafe-7e25-4a25-a118-a76800f536ef" x="58" y="177" width="95" height="17"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MOBLIE}==null?"未提供":$F{MOBLIE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="78072e36-df1b-4407-9e09-f3c0f4bd8ead" x="58" y="193" width="95" height="17"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EMAIL}==null?"未提供":$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6b9905ed-0333-437d-bd66-b83aa9e4d86a" x="37" y="251" width="296" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACCNAME}==null?"未提供":$F{ACCNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="02c01b3d-44c7-4ad3-baf2-6e531ad607c2" x="37" y="272" width="296" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANKNO}==null?"未提供":$F{BANKNO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="27963a2a-f9a4-45c3-8e43-934c0e832051" x="37" y="295" width="296" height="16"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANKNAME}==null?"未提供":$F{BANKNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="9a8cdbde-6f99-4ffc-9bbe-943bdf97034f" x="68" y="344" width="165" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGENCYNAME}==null?"未提供":$F{AGENCYNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="40d570da-a68f-476a-8c78-d17e27b6591e" x="323" y="345" width="171" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCTNAME}==null?"未提供":$F{PRODUCTNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ec85fac3-cbb4-424a-9c47-65289caa11f6" x="468" y="367" width="75" height="19"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{REDEMPTIONOPENDAY}==null?"未提供":$F{REDEMPTIONOPENDAY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="62ee1a4a-1348-4e13-a4db-7ea1112c6737" x="68" y="365" width="119" height="19"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{REDEMPTIONSHAREBIG}==null?"未提供":$F{REDEMPTIONSHAREBIG}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="948ae77c-752b-4bc3-9a22-92c8d7d85deb" x="68" y="598" width="100" height="20"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font fontName="宋体" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGENTNAME}==null?"未提供":$F{AGENTNAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="ed8e65b5-5c7b-45c7-be9a-76963148fefd" x="247" y="598" width="76" height="20"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AGENTCODE}==null?"未提供":$F{AGENTCODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="f80c733f-9462-4b0d-b99e-6289b87c48e0" x="443" y="599" width="87" height="20"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{REDEMPTIONAPPLYDATE}==null?"未提供":$F{REDEMPTIONAPPLYDATE}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="fd02a6cc-6eaa-46e6-8b2d-2863bfc61e02" x="68" y="85" width="199" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="b35f6892-bb50-4078-b276-28f4a0f7d59f" x="58" y="134" width="95" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="5f3b68b2-4f1c-4cbb-914a-783667e5b541" x="58" y="155" width="95" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="73c40ac1-4692-44c2-8e56-c49f474afb35" x="58" y="173" width="328" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="3dd979ba-1e6d-493b-b4be-68b341cffaf2" x="386" y="158" width="100" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="d025e15a-600e-4b86-bc3b-1b29dd0a1bdf" x="386" y="138" width="100" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="b0d378d0-4b27-47d5-85d5-d7114307e478" x="58" y="194" width="95" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="1803f9d2-75aa-4f26-bea8-15d337da7697" x="58" y="209" width="95" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="84fe1b2c-9308-412d-aa90-aef1d55720dd" x="37" y="271" width="260" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="294c67bd-9481-4c8b-8d27-ce5bd4c11467" x="37" y="290" width="260" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="95f66ba3-744a-41ba-9d05-26d64fdaa124" x="37" y="311" width="260" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="7b90a746-f4e3-4624-8306-fce0b28a4a30" x="68" y="364" width="165" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="9f49dbe4-8855-4c0c-8980-31a49fe9bad6" x="323" y="366" width="171" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="39e25f69-5c11-4e9a-be47-bc8fcdade200" x="468" y="384" width="75" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="7d332f27-253e-4305-b817-361b7a69e7bb" x="68" y="383" width="119" height="1"/>
+			</line>
+			<line>
+				<reportElement uuid="f2919c93-cae5-4f8b-8f09-f450d69ee21e" x="252" y="386" width="117" height="1"/>
+			</line>
+			<textField>
+				<reportElement uuid="d31a997e-1d77-4d2d-b814-d7c9754f1a78" x="251" y="367" width="118" height="19"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{REDEMPTIONSHARESMALL}==null?"未提供":$F{REDEMPTIONSHARESMALL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="66a566ff-c301-410c-a1f6-832b0fb6ef8e" x="1" y="384" width="67" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[封闭期：]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="e336e905-208f-4fa3-8f52-397d40deb24a" x="61" y="384" width="126" height="19"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CLOSEDATE}==null?"未提供":$F{CLOSEDATE}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="f0b6e209-5144-4a65-8b2c-916d1ad4bbb8" x="68" y="403" width="119" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="25452369-e93e-4f85-892a-2ce478c64db8" x="220" y="387" width="79" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[封闭期内赎回费率,]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="ad0d4674-27c3-4fa4-90e0-90d948dea759" x="295" y="387" width="105" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="9" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{REDEMPTIONFEE}==null?"未提供":$F{REDEMPTIONFEE}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="c752f75d-766e-4a34-ba00-0d1113b25a0e" x="293" y="404" width="93" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="f41855b6-9bdc-4454-a447-41d6e0f1d25a" x="386" y="387" width="82" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="宋体" size="9" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[%   封闭期外免赎费回.费]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

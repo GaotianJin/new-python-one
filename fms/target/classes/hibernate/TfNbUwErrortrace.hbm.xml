@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+	"-//Hibernate/Hibernate Mapping DTD//EN"
+	"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<hibernate-mapping package="com.sinosoft.core.domain.model.rule">
+	<class
+		name="TfNbUwErrorTrace"
+		table="TF_NB_UW_ERROR_TRACE"
+	>
+
+		<meta attribute="sync-DAO">true</meta>
+
+		<id
+			name="Id"
+			type="integer"
+			column="DBID"
+		>
+			<generator class="native"/>
+		</id>
+
+		<property
+			name="UwLayer"
+			column="UW_LAYER"
+			type="string"
+			not-null="true"
+			length="1"
+		/>
+		<property
+			name="UwRelationId"
+			column="UW_RELATION_ID"
+			type="integer"
+			not-null="true"
+			length="20"
+		/>
+		<property
+			name="UwBatchNo"
+			column="UW_BATCH_NO"
+			type="integer"
+			not-null="true"
+			length="22"
+		/>
+		<property
+			name="UwRuleId"
+			column="UW_RULE_ID"
+			type="string"
+			not-null="true"
+			length="6"
+		/>
+		<property
+			name="UwInfo"
+			column="UW_INFO"
+			type="string"
+			not-null="true"
+			length="255"
+		/>
+		<property
+			name="UwInfoLevelFlag"
+			column="UW_INFO_LEVEL_FLAG"
+			type="string"
+			not-null="false"
+			length="1"
+		/>
+		<property
+			name="UwType"
+			column="UW_TYPE"
+			type="string"
+			not-null="false"
+			length="2"
+		/>
+		<property
+			name="UwMasterId"
+			column="UW_MASTER_ID"
+			type="integer"
+			not-null="true"
+			length="20"
+		/>
+		<property
+			name="OperatorId"
+			column="OPERATOR_ID"
+			type="integer"
+			not-null="true"
+			length="20"
+		/>
+		<property
+			name="MakeTime"
+			column="MAKE_TIME"
+			type="java.sql.Timestamp"
+			not-null="true"
+			length="11"
+		/>
+		<property
+			name="ModifyTime"
+			column="MODIFY_TIME"
+			type="java.sql.Timestamp"
+			not-null="true"
+		/>
+
+
+	</class>	
+</hibernate-mapping>

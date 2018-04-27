@@ -1,0 +1,87 @@
+/*table*/
+/* .top_table table{background:#f6f9fa;font-size:12px;overflow:hidden;} */
+.top_table table{background:#edf7f9;font-size:12px;font-family:"����";color:#666;overflow:hidden;}
+.top_table table td{border-right:1px solid #b7cfe1;border-bottom:1px solid #b7cfe1;height:29px;/* line-height:17px; */}
+.table_input{margin-left:10px;height:20px;border:1px solid #b7e7f7;width:155px;text-align: left;box-shadow:0 1px 1px 0 #439cd4 inset;}
+.table_text_right{padding-left:10px;}
+.table_file{border:1px solid #95c2f0;background-image:img/icon1.png;}
+.table_TextArea{border:1px solid #95c2f0;margin-top:5px;margin-bottom:4px;overflow-y:auto;width:97%;}
+.table_textarea{border:1px solid #95c2f0;margin-top:5px;margin-bottom:4px;overflow-y:auto;}
+.table_checkbox{border:1px solid #95c2f0;}
+.table_select{margin-left:10px;height:22px;border:1px solid #95c2f0;width:152px;text-align: left;}
+.table_text{background:#dbf3f9;padding-right:10px;text-align:right; width:10%;}
+.table_input::-ms-clear { display: none; }
+.combo-text::-ms-clear { display: none; }
+/*------------------------------*/
+.table_text2{background:#f0f6fa;padding-right:10px;width: 20%; text-align: right;}
+.e-cis_button{margin-top:5px;margin-left:5px;}
+.botton_title{font-size:12px;text-align: right;font-weight: bold;color: #0E2D5F;}
+
+.table_title{background:#f0f6fa;padding-right:10px;text-align: right;width: 10%;}
+.table_td_input{width: 35%;text-align: left;}
+
+.outerPanel{height:100%;overflow: auto} 
+.table_input1{margin-left:10px;height:20px;border:1px solid #b7e7f7;width:79.5%;text-align: left;}
+.table_input2{margin-left:10px;height:20px;border:1px solid #b7e7f7;width:8%;text-align: left;}
+.comboSpan{margin-left:10px;}
+
+a:link{text-decoration:none;color:#666;}
+a:visited{text-decoration:none;}
+a:hover{text-decoration:underline;color:#2b8ed3;}
+
+.searchbox{width:152px;}
+.createTable table{background:#f6f9fa;font-size:12px;overflow:hidden;}
+.createTable table td{border-right:0px solid #b7cfe1;border-left:0px solid #b7cfe1;border-top:0px solid #b7cfe1;border-bottom:0px solid #b7cfe1;height:29px;line-height:17px;}
+.table_input3{background-color:#edf7f9;margin-left:0px;height:16px;width:40px;text-align: left;}
+.table_input4{margin-left:10px;height:20px;border:0px solid #95c2f0;width:90%;text-align: left;background-color:#F0F0F0;}
+.createTable input{border:none;border-bottom:1px solid #4ec6ff;}
+.tableOuterDiv{margin-top: 5px; }
+.checkBoxText{line-height:29px;}
+/* .inputCheckBox{line-height:17px;} */
+.inputCheckBox {
+    opacity: 0.6;
+    position: absolute;
+    z-index: -1;
+}
+
+.styleCheckBox {
+    /* your style goes here */
+    margin:0px 4px -2px 5px;
+    display: inline-block;
+    height:12px;
+    width: 12px;
+    border-radius: 2px;
+    border:1px solid #4ec6ff; 
+	box-shadow:0px 0px 1px 1px #4ec6ff inset;       
+}
+
+/* active style goes here */
+.styleCheckBox:hover {
+  background: -webkit-radial-gradient(#4ec6ff,#bcf6ff, #fff);
+  background: -moz-radial-gradient(#4ec6ff,#bcf6ff, #fff);
+  background: -o-radial-gradient(#4ec6ff,#bcf6ff, #fff);
+  background: radial-gradient(#4ec6ff,#bcf6ff, #fff);
+  background-repeat: repeat-x;
+}
+.checkStyleCheckBox  {
+  background: -webkit-radial-gradient(#000, #fff);
+  background: -moz-radial-gradient(#000, #fff);
+  background: -o-radial-gradient(#000, #fff);
+  background: radial-gradient(#000, #fff);
+  background-repeat: repeat-x;
+}
+/* 
+.SinoUI-filebox{
+	margin-left:10px;
+	height:20px;
+	border:1px solid #95c2f0;
+	width:155px;
+	text-align: left;
+  vertical-align: top;
+  position: absolute;
+  top: 0;
+  left: -5000px;
+}
+ */
+
+

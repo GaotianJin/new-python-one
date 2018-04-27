@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+	"-//Hibernate/Hibernate Mapping DTD//EN"
+	"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<hibernate-mapping package="com.sinosoft.core.domain.model.user">
+	<class
+		name="Privilege"
+		table="privilege"
+	>
+		<meta attribute="sync-DAO">true</meta>
+
+		<id
+			name="Id"
+			type="integer"
+			column="id"
+		>
+			<generator class="native"/>
+		</id>
+
+		<property
+			name="Privilegecode"
+			column="privilegecode"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Privilegename"
+			column="privilegename"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Privilegetype"
+			column="privilegetype"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Url"
+			column="url"
+			type="string"
+			not-null="false"
+			length="100"
+		/>
+		<property
+			name="Pid"
+			column="pid"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Method"
+			column="method"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Pre"
+			column="pre"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Next"
+			column="next"
+			type="string"
+			not-null="false"
+			length="20"
+		/>
+		<property
+			name="Num"
+			column="num"
+			type="integer"
+			not-null="false"
+			length="10"
+		/>
+
+		<set
+			inverse="true"
+			lazy="true"
+			name="Role2privileges"
+		>
+			<key column="privilege_id" />
+			<one-to-many class="Role2privilege" />
+		</set>
+
+
+
+	</class>	
+</hibernate-mapping>

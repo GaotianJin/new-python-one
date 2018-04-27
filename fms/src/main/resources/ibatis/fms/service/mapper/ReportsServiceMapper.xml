@@ -1,0 +1,3681 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+  
+<mapper namespace="com.fms.service.mapper.ReportsServiceMapper">
+	<sql id="queryBusinessManageListCondition">
+		<if test="year != null and year !=''" >
+      		AND	CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE like '${year}%'
+				ELSE
+				v.expectOpenDay like '${year}%'
+				END 
+    	</if>
+  		<if test="month != null and month !=''" >
+  			AND	CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE like '${month}%'
+				ELSE
+				v.expectOpenDay like '${month}%'
+				END 
+    	</if>
+    	<if test="businessManagementStartTime != null and businessManagementStartTime !=''" >
+    		AND	CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE <![CDATA[>=]]> '${businessManagementStartTime}'
+				ELSE
+				v.expectOpenDay <![CDATA[>=]]> '${businessManagementStartTime}'
+				END 
+    	</if>
+    	<if test="businessManagementEndTime != null and businessManagementEndTime !=''" >
+    		AND	CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE <![CDATA[<=]]>  '${businessManagementEndTime}'
+				ELSE
+				v.expectOpenDay <![CDATA[<=]]>  '${businessManagementEndTime}'
+				END 
+    	</if>
+    	<if test="departmentId != null and departmentId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_AGENT F WHERE F.DEPARTMENT_ID = #{departmentId} AND F.AGENT_ID = A.AGENT_ID AND F.RC_STATE = 'E')
+    	</if>
+    	<if test="comId != null and comId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_AGENT F WHERE F.COM_ID = #{comId} AND F.AGENT_ID = A.AGENT_ID AND F.RC_STATE = 'E')
+    	</if>
+    	<if test='productId!= null and productId!=""'>
+			AND B.PRODUCT_ID = #{productId}
+		</if>
+		<if test='productName != null and productName !=""'>
+			AND B.PRODUCT_NAME = #{productName}
+		</if>
+  	</sql>
+  	
+<!-- 查询月份 -->
+<select id="getMonthes" parameterType="java.util.Map" resultType="java.util.Map">
+SELECT
+	DISTINCT DATE_FORMAT(a.TRADE_DATE, "%Y-%m") "monthes"
+FROM
+	t_trade_info a,
+	t_pd_product b,
+	t_trade_product_info_view v,
+	t_cust_base_info c,
+	t_trade_cust_info d,
+	t_pd_wealth e,
+  t_def_com f,
+	t_agent g,
+	t_def_department h
+WHERE
+	a.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND b.PRODUCT_ID = e.PRODUCT_ID
+AND f.COM_ID = g.COM_ID
+AND h.DEPARTMENT_ID = g.DEPARTMENT_ID
+AND g.AGENT_ID = a.AGENT_ID
+AND a.TRADE_STAUS = '10'
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+AND h.RC_STATE = "E"
+ORDER BY
+	MONTHES
+
+</select>
+<!-- 查询月份 -->
+<select id="getYears" parameterType="java.util.Map" resultType="java.util.Map">
+SELECT
+	DISTINCT DATE_FORMAT(e.FOUND_DATE, "%Y") "years"
+FROM
+	t_trade_info a,
+	t_pd_product b,
+	t_trade_product_info_view v,
+	t_cust_base_info c,
+	t_trade_cust_info d,
+	t_pd_wealth e,
+  t_def_com f,
+	t_agent g,
+	t_def_department h
+WHERE
+	a.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND b.PRODUCT_ID = e.PRODUCT_ID
+AND f.COM_ID = g.COM_ID
+AND h.DEPARTMENT_ID = g.DEPARTMENT_ID
+AND g.AGENT_ID = a.AGENT_ID
+AND a.TRADE_STAUS = '10'
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+AND h.RC_STATE = "E"
+ORDER BY
+	YEARS
+
+</select>
+<!-- 业管部列表count数 -->
+<select id="queryBusinessManageListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+				SELECT
+				COUNT(1)
+				FROM
+				t_trade_info a,
+					t_pd_product b,
+					t_trade_product_info_view v,
+					t_cust_base_info c,
+					t_trade_cust_info d,
+					t_pd_wealth e
+				WHERE
+					a.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND b.PRODUCT_ID = v.PRODUCT_ID
+				AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND b.PRODUCT_ID = e.PRODUCT_ID
+				AND a.RC_STATE = "E"
+				AND b.RC_STATE = "E"
+				AND c.RC_STATE = "E"
+				AND d.RC_STATE = "E"
+				AND e.RC_STATE = "E"
+				<include refid="queryBusinessManageListCondition"/>
+</select>
+<!-- 查询业管部报表信息 分页0,10 -->
+<select id="queryBusinessManageList" parameterType="java.util.Map" resultType="java.util.Map">
+				SELECT
+					CASE
+					WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+					THEN DATE_FORMAT(e.FOUND_DATE, "%Y/%m")
+					ELSE
+					DATE_FORMAT(v.expectOpenDay, "%Y/%m")
+					END "month",
+					b.PRODUCT_NAME "productName",
+					CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" THEN
+					"股权类产品"
+				WHEN b.PRODUCT_SUB_TYPE = "02" THEN
+					"固定类产品"
+				WHEN b.PRODUCT_SUB_TYPE = "03" THEN
+					"浮动类产品"
+				WHEN b.PRODUCT_SUB_TYPE = "04" THEN
+					"海外类产品"
+				END "productSubType",
+				CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN DATE_FORMAT(e.FOUND_DATE, "%Y-%m-%d")
+				ELSE
+				DATE_FORMAT(v.expectOpenDay, "%Y-%m-%d")
+				END "foundDate",
+				 (
+					SELECT
+						x.AGENT_NAME "agentName"
+					FROM
+						t_agent x
+					WHERE
+						x.AGENT_ID = a.AGENT_ID
+					AND x.RC_STATE = "E"
+					) "agentName",
+				(SELECT
+						x.COM_NAME "comName"
+				FROM
+				t_def_com x,
+				t_agent y
+				WHERE
+				x.COM_ID = y.COM_ID
+				AND y.AGENT_ID = a.AGENT_ID
+				AND x.RC_STATE = "E"
+				AND y.RC_STATE = "E"
+				) "comName"
+				,(SELECT
+					x.DEPARTMENT_NAME "comName"
+				FROM
+					t_def_department x,
+					t_agent y
+				WHERE
+					x.DEPARTMENT_ID = y.DEPARTMENT_ID
+					AND y.AGENT_ID = a.AGENT_ID
+					AND x.RC_STATE = "E"
+					AND y.RC_STATE = "E"
+				) "departmentName"
+				,
+				 CASE
+WHEN
+a.TRADE_DATE = (SELECT
+min(p.TRADE_DATE)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS = "10"
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+)
+THEN '是'
+WHEN
+a.TRADE_DATE > (SELECT
+min(p.TRADE_DATE)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS = "10"
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+)
+THEN'否'
+ELSE
+			'是'
+END   "custLevel",
+v.subscriptionFee "subscriptionFee",
+CONCAT(
+	CASE
+	WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL THEN
+		(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+	ELSE
+		e.CLOSE_DPERIODS
+	END,
+	'',
+	FUNC_GET_CODE_NAME (
+		'cloPeriUnit',
+		e.CLOSE_DPERIOD_UNIT
+	)
+) "closedPeriods",
+				 (
+					SELECT
+						x.SUBSCRIPTION_FEE_RATIO
+					FROM
+						t_pd_wealth_charge_rate x
+					WHERE
+						x.PD_WEALTH_ID = e.PD_WEALTH_ID
+					AND x.RC_STATE = 'E'
+				) "subscriptionFeeRatio",
+				 v.reductionRadio "reductionRadio",
+				 c.CUSTOMER_NO "customerNo", 
+				 c.CHN_NAME "custName", 
+				 case when c.ID_NO in (SELECT a.IDNO from t_agent a where a.RC_STATE = 'E')
+                  THEN "是"
+                  ELSE "否"
+                  END "isEmployee",
+				 FUNC_GET_CODE_NAME ('idType', c.ID_TYPE) "idType",
+				 c.ID_NO "idNo",
+				 CASE
+				WHEN c.SEX = "F" THEN
+					"女"
+				ELSE
+					"男"
+				END "gender",
+				 c.AGE "age",
+				 (
+					SELECT
+						CONCAT(
+							(
+								SELECT
+									z.BANK_NAME
+								FROM
+									t_def_bank z
+								WHERE
+									z.BANK_ID = y.BANK_CODE
+							),
+							'',
+							y.BRANCH_BANK_NAME
+						)
+					FROM
+						t_trade_cust_acc_rela x,
+						t_cust_acc_info y
+					WHERE
+						x.TRADE_CUST_INFO_ID = d.TRADE_CUST_INFO_ID
+					AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+					AND x.TRADE_ACC_FLAG = '1'
+					AND x.RC_STATE = 'E'
+				) "bankName",
+				 (
+					SELECT
+						y.BANK_ACC_NO
+					FROM
+						t_trade_cust_acc_rela x,
+						t_cust_acc_info y
+					WHERE
+						x.TRADE_CUST_INFO_ID = d.TRADE_CUST_INFO_ID
+					AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+					AND x.TRADE_ACC_FLAG = '1'
+					AND x.RC_STATE = 'E'
+				) "bankAccount",
+				 (
+					SELECT
+						max(x.MOBILE)
+					FROM
+						t_cust_contact_info x
+					WHERE
+						x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+					AND x.RC_STATE = 'E'
+				) "mobile",
+				(SELECT
+					max(x.EMAIL) 
+					FROM
+					t_cust_contact_info x
+					WHERE
+							x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+						AND x.RC_STATE = 'E'
+					) "email",
+				 (
+					SELECT
+						CONCAT(
+							CONCAT(
+								CONCAT(
+									IFNULL(
+										FUNC_GET_PLACE_NAME ('01', y.PROVINCE),
+										''
+									),
+									'',
+									IFNULL(
+										FUNC_GET_PLACE_NAME ('02', y.CITY),
+										''
+									)
+								),
+								'',
+								IFNULL(
+									FUNC_GET_PLACE_NAME ('03', Y.COUNTRY),
+									''
+								)
+							),
+							'',
+							IFNULL(y.STREET, '')
+						)
+					FROM
+						t_trade_cust_address_rela x,
+						t_cust_address_info y
+					WHERE
+						x.TRADE_CUST_INFO_ID = d.TRADE_CUST_INFO_ID
+					AND y.CUST_ADDRESS_INFO_ID = x.CUST_ADDRESS_INFO_ID
+					AND x.TRADE_ADDRESS_FLAG = '1'
+					AND x.RC_STATE = 'E'
+				) "custAddress",
+				CASE
+WHEN B.PRODUCT_SUB_TYPE in('03','04')  THEN
+	NULL
+ELSE
+case when(
+select x.VALUE_DATE from t_trade_funds_share_change x
+where x.ORIGIN_TRADE_INFO_ID=a.TRADE_INFO_ID
+and x.RC_STATE='E'
+) is NOT null then
+(case when 
+(select x.TRANSFER_ALL from t_trade_funds_share_change x
+where x.ORIGIN_TRADE_INFO_ID=a.TRADE_INFO_ID
+and x.RC_STATE='E') = "01" 
+THEN 
+(FUNC_FOUNDATE_CLOSED_ENDDATE (
+		e.FOUND_DATE,
+		(
+			CASE
+			WHEN (
+				SELECT
+					x.CLOSE_DPERIOD
+				FROM
+					t_pd_wealth_fee_rate x
+				WHERE
+					e.PD_WEALTH_ID = x.PD_WEALTH_ID
+				AND v.beneficialType = x.BENEFICIAL_TYPE
+				AND x.rc_state = "E"
+			) IS NOT NULL THEN
+				(
+					SELECT
+						x.CLOSE_DPERIOD
+					FROM
+						t_pd_wealth_fee_rate x
+					WHERE
+						e.PD_WEALTH_ID = x.PD_WEALTH_ID
+					AND v.beneficialType = x.BENEFICIAL_TYPE
+					AND x.rc_state = "E"
+				)
+			ELSE
+				e.CLOSE_DPERIODS
+			END
+		),
+		e.CLOSE_DPERIOD_UNIT
+	))
+ELSE
+(select x.VALUE_DATE from t_trade_funds_share_change x
+where x.ORIGIN_TRADE_INFO_ID=a.TRADE_INFO_ID
+and x.RC_STATE='E')
+END
+)ELSE
+	FUNC_FOUNDATE_CLOSED_ENDDATE (
+		e.FOUND_DATE,
+		(
+			CASE
+			WHEN (
+				SELECT
+					x.CLOSE_DPERIOD
+				FROM
+					t_pd_wealth_fee_rate x
+				WHERE
+					e.PD_WEALTH_ID = x.PD_WEALTH_ID
+				AND v.beneficialType = x.BENEFICIAL_TYPE
+				AND x.rc_state = "E"
+			) IS NOT NULL THEN
+				(
+					SELECT
+						x.CLOSE_DPERIOD
+					FROM
+						t_pd_wealth_fee_rate x
+					WHERE
+						e.PD_WEALTH_ID = x.PD_WEALTH_ID
+					AND v.beneficialType = x.BENEFICIAL_TYPE
+					AND x.rc_state = "E"
+				)
+			ELSE
+				e.CLOSE_DPERIODS
+			END
+		),
+		e.CLOSE_DPERIOD_UNIT
+	)
+END
+END "endDate",
+(SELECT
+max(x.REDEMPTION_OPENDAY)
+FROM
+t_redemption_info x,
+t_redemption_operation y,
+t_redemption_trade_info z
+WHERE
+x.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND a.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND y.REDEMPTION_INFO_ID = x.REDEMPTION_INFO_ID
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "redemptionDate",
+(SELECT
+max(x.ACTU_REDEMPTION_TOTAL_SHARE)
+FROM
+t_redemption_info x,
+t_redemption_operation y,
+t_redemption_trade_info z
+WHERE
+x.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND a.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND y.REDEMPTION_INFO_ID = x.REDEMPTION_INFO_ID
+AND x.REDEMPTION_OPENDAY = redemptionDate
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "redemptionShares",
+					ROUND(
+	(CASE 
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN		(SELECT
+			x.net_value * (
+				min(y.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = e.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = e.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E")
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN a.TRADE_TOTAL_ASSETS - (
+						SELECT
+							IFNULL(SUM(
+								IFNULL(
+									x.CONFIRM_DISTRIBUTE_PRINCIPAL,
+									0
+								) + IFNULL(
+									x.CONFIRM_DISTRIBUTE_INTEREST,
+									0
+								)
+							),0) 'distributeAmount'
+						FROM
+							t_pd_income_dis_detail x,
+							t_pd_income_dis y
+						WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						e.FOUND_DATE,
+						(
+			CASE
+			WHEN (
+				SELECT
+					x.CLOSE_DPERIOD
+				FROM
+					t_pd_wealth_fee_rate x
+				WHERE
+					e.PD_WEALTH_ID = x.PD_WEALTH_ID
+				AND v.beneficialType = x.BENEFICIAL_TYPE
+				AND x.rc_state = "E"
+			) IS NOT NULL THEN
+				(
+					SELECT
+						x.CLOSE_DPERIOD
+					FROM
+						t_pd_wealth_fee_rate x
+					WHERE
+						e.PD_WEALTH_ID = x.PD_WEALTH_ID
+					AND v.beneficialType = x.BENEFICIAL_TYPE
+					AND x.rc_state = "E"
+				)
+			ELSE
+				e.CLOSE_DPERIODS
+			END
+		),
+		e.CLOSE_DPERIOD_UNIT
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10')
+WHEN b.PRODUCT_SUB_TYPE = '01'
+THEN a.TRADE_TOTAL_ASSETS
+END
+	),
+	2
+) "remainSubscription",
+				 ROUND(
+					(
+						SELECT
+							min(x.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+						FROM
+							t_trade_status_info x
+						WHERE
+							x.TRADE_INFO_ID = a.TRADE_INFO_ID
+						AND x.RC_STATE = "E"
+					),
+					2
+				) "remianingShares",
+				b.remark "remark",
+				FUNC_GET_CODE_NAME ('tradeStatus', a.TRADE_STAUS) "tradeStatus"
+				FROM
+					t_trade_info a,
+					t_pd_product b,
+					t_trade_product_info_view v,
+					t_cust_base_info c,
+					t_trade_cust_info d,
+					t_pd_wealth e
+				WHERE
+					a.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND b.PRODUCT_ID = v.PRODUCT_ID
+				AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND b.PRODUCT_ID = e.PRODUCT_ID
+				AND a.RC_STATE = "E"
+				AND b.RC_STATE = "E"
+				AND c.RC_STATE = "E"
+				AND d.RC_STATE = "E"
+				AND e.RC_STATE = "E"
+				<include refid="queryBusinessManageListCondition"/>
+				ORDER BY
+					MONTH
+				LIMIT #{startIndex} , #{endIndex} 
+</select>
+<!-- 查询所有业管部数据 -->
+<select id="queryBusinessManageDetailList" parameterType="java.util.Map" resultType="java.util.Map">
+
+				SELECT
+					(@rowNum:=@rowNum+1) as "serialNo",
+					t.*
+					FROM(SELECT
+					CASE
+					WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+					THEN DATE_FORMAT(e.FOUND_DATE, "%Y/%m")
+					ELSE
+					DATE_FORMAT(v.expectOpenDay, "%Y/%m")
+					END "month",
+					b.PRODUCT_NAME "productName",
+					CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" THEN
+					"股权类产品"
+				WHEN b.PRODUCT_SUB_TYPE = "02" THEN
+					"固定类产品"
+				WHEN b.PRODUCT_SUB_TYPE = "03" THEN
+					"浮动类产品"
+				WHEN b.PRODUCT_SUB_TYPE = "04" THEN
+					"海外类产品"
+				END "productSubType",
+				CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN DATE_FORMAT(e.FOUND_DATE, "%Y-%m-%d")
+				ELSE
+				DATE_FORMAT(v.expectOpenDay, "%Y-%m-%d")
+				END "foundDate",
+				 (
+					SELECT
+						x.AGENT_NAME "agentName"
+					FROM
+						t_agent x
+					WHERE
+						x.AGENT_ID = a.AGENT_ID
+					AND x.RC_STATE = "E"
+					) "agentName",
+				(SELECT
+						x.COM_NAME "comName"
+				FROM
+				t_def_com x,
+				t_agent y
+				WHERE
+				x.COM_ID = y.COM_ID
+				AND y.AGENT_ID = a.AGENT_ID
+				AND x.RC_STATE = "E"
+				AND y.RC_STATE = "E"
+				) "comName"
+				,(SELECT
+					x.DEPARTMENT_NAME "comName"
+				FROM
+					t_def_department x,
+					t_agent y
+				WHERE
+					x.DEPARTMENT_ID = y.DEPARTMENT_ID
+					AND y.AGENT_ID = a.AGENT_ID
+					AND x.RC_STATE = "E"
+					AND y.RC_STATE = "E"
+				) "departmentName"
+				,
+				  CASE
+WHEN
+a.TRADE_DATE = (SELECT
+min(p.TRADE_DATE)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS = "10"
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+)
+THEN '是'
+WHEN
+a.TRADE_DATE > (SELECT
+min(p.TRADE_DATE)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS = "10"
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+)
+THEN'否'
+ELSE
+			'是'
+END   "custLevel",
+				v.subscriptionFee "subscriptionFee",
+				CONCAT(
+	CASE
+	WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL THEN
+		(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+	ELSE
+		e.CLOSE_DPERIODS
+	END,
+	'',
+	FUNC_GET_CODE_NAME (
+		'cloPeriUnit',
+		e.CLOSE_DPERIOD_UNIT
+	)
+) "closedPeriods",
+				 (
+					SELECT
+						x.SUBSCRIPTION_FEE_RATIO
+					FROM
+						t_pd_wealth_charge_rate x
+					WHERE
+						x.PD_WEALTH_ID = e.PD_WEALTH_ID
+					AND x.RC_STATE = 'E'
+				) "subscriptionFeeRatio",
+				 v.reductionRadio "reductionRadio",
+				 c.CUSTOMER_NO "customerNo", 
+				 c.CHN_NAME "custName",
+				  case when c.ID_NO in (SELECT a.IDNO from t_agent a where a.RC_STATE = 'E')
+                  THEN "是"
+                  ELSE "否"
+                  END "isEmployee",
+				 FUNC_GET_CODE_NAME ('idType', c.ID_TYPE) "idType",
+				 c.ID_NO "idNo",
+				 CASE
+				WHEN c.SEX = "F" THEN
+					"女"
+				ELSE
+					"男"
+				END "gender",
+				 c.AGE "age",
+				 (
+					SELECT
+						CONCAT(
+							(
+								SELECT
+									z.BANK_NAME
+								FROM
+									t_def_bank z
+								WHERE
+									z.BANK_ID = y.BANK_CODE
+							),
+							'',
+							y.BRANCH_BANK_NAME
+						)
+					FROM
+						t_trade_cust_acc_rela x,
+						t_cust_acc_info y
+					WHERE
+						x.TRADE_CUST_INFO_ID = d.TRADE_CUST_INFO_ID
+					AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+					AND x.TRADE_ACC_FLAG = '1'
+					AND x.RC_STATE = 'E'
+				) "bankName",
+				 (
+					SELECT
+						y.BANK_ACC_NO
+					FROM
+						t_trade_cust_acc_rela x,
+						t_cust_acc_info y
+					WHERE
+						x.TRADE_CUST_INFO_ID = d.TRADE_CUST_INFO_ID
+					AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+					AND x.TRADE_ACC_FLAG = '1'
+					AND x.RC_STATE = 'E'
+				) "bankAccount",
+				 (
+					SELECT
+						max(x.MOBILE)
+					FROM
+						t_cust_contact_info x
+					WHERE
+						x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+					AND x.RC_STATE = 'E'
+				) "mobile",
+				(SELECT
+				x.EMAIL 
+				FROM
+				t_cust_contact_info x
+				WHERE
+						x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+					AND x.RC_STATE = 'E'
+				) "email",	
+				 (
+					SELECT
+						CONCAT(
+							CONCAT(
+								CONCAT(
+									IFNULL(
+										FUNC_GET_PLACE_NAME ('01', y.PROVINCE),
+										''
+									),
+									'',
+									IFNULL(
+										FUNC_GET_PLACE_NAME ('02', y.CITY),
+										''
+									)
+								),
+								'',
+								IFNULL(
+									FUNC_GET_PLACE_NAME ('03', Y.COUNTRY),
+									''
+								)
+							),
+							'',
+							IFNULL(y.STREET, '')
+						)
+					FROM
+						t_trade_cust_address_rela x,
+						t_cust_address_info y
+					WHERE
+						x.TRADE_CUST_INFO_ID = d.TRADE_CUST_INFO_ID
+					AND y.CUST_ADDRESS_INFO_ID = x.CUST_ADDRESS_INFO_ID
+					AND x.TRADE_ADDRESS_FLAG = '1'
+					AND x.RC_STATE = 'E'
+				) "custAddress",
+			CASE
+WHEN B.PRODUCT_SUB_TYPE in('03','04')  THEN
+	NULL
+ELSE
+case when(
+select x.VALUE_DATE from t_trade_funds_share_change x
+where x.ORIGIN_TRADE_INFO_ID=a.TRADE_INFO_ID
+and x.RC_STATE='E'
+) is NOT null then
+(case when 
+(select x.TRANSFER_ALL from t_trade_funds_share_change x
+where x.ORIGIN_TRADE_INFO_ID=a.TRADE_INFO_ID
+and x.RC_STATE='E') = "01" 
+THEN 
+(FUNC_FOUNDATE_CLOSED_ENDDATE (
+		e.FOUND_DATE,
+		(
+			CASE
+			WHEN (
+				SELECT
+					x.CLOSE_DPERIOD
+				FROM
+					t_pd_wealth_fee_rate x
+				WHERE
+					e.PD_WEALTH_ID = x.PD_WEALTH_ID
+				AND v.beneficialType = x.BENEFICIAL_TYPE
+				AND x.rc_state = "E"
+			) IS NOT NULL THEN
+				(
+					SELECT
+						x.CLOSE_DPERIOD
+					FROM
+						t_pd_wealth_fee_rate x
+					WHERE
+						e.PD_WEALTH_ID = x.PD_WEALTH_ID
+					AND v.beneficialType = x.BENEFICIAL_TYPE
+					AND x.rc_state = "E"
+				)
+			ELSE
+				e.CLOSE_DPERIODS
+			END
+		),
+		e.CLOSE_DPERIOD_UNIT
+	))
+ELSE
+(select x.VALUE_DATE from t_trade_funds_share_change x
+where x.ORIGIN_TRADE_INFO_ID=a.TRADE_INFO_ID
+and x.RC_STATE='E')
+END
+)ELSE
+	FUNC_FOUNDATE_CLOSED_ENDDATE (
+		e.FOUND_DATE,
+		(
+			CASE
+			WHEN (
+				SELECT
+					x.CLOSE_DPERIOD
+				FROM
+					t_pd_wealth_fee_rate x
+				WHERE
+					e.PD_WEALTH_ID = x.PD_WEALTH_ID
+				AND v.beneficialType = x.BENEFICIAL_TYPE
+				AND x.rc_state = "E"
+			) IS NOT NULL THEN
+				(
+					SELECT
+						x.CLOSE_DPERIOD
+					FROM
+						t_pd_wealth_fee_rate x
+					WHERE
+						e.PD_WEALTH_ID = x.PD_WEALTH_ID
+					AND v.beneficialType = x.BENEFICIAL_TYPE
+					AND x.rc_state = "E"
+				)
+			ELSE
+				e.CLOSE_DPERIODS
+			END
+		),
+		e.CLOSE_DPERIOD_UNIT
+	)
+END
+END "endDate",
+(SELECT
+max(x.REDEMPTION_OPENDAY)
+FROM
+t_redemption_info x,
+t_redemption_operation y,
+t_redemption_trade_info z
+WHERE
+x.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND a.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND y.REDEMPTION_INFO_ID = x.REDEMPTION_INFO_ID
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "redemptionDate",
+(SELECT
+max(x.ACTU_REDEMPTION_TOTAL_SHARE)
+FROM
+t_redemption_info x,
+t_redemption_operation y,
+t_redemption_trade_info z
+WHERE
+x.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND a.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND y.REDEMPTION_INFO_ID = x.REDEMPTION_INFO_ID
+AND x.REDEMPTION_OPENDAY = redemptionDate
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "redemptionShares",
+					 ROUND(
+	(CASE 
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN		(SELECT
+			x.net_value * (
+				min(y.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = e.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = e.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E")
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN a.TRADE_TOTAL_ASSETS - (
+						SELECT
+							IFNULL(SUM(
+								IFNULL(
+									x.CONFIRM_DISTRIBUTE_PRINCIPAL,
+									0
+								) + IFNULL(
+									x.CONFIRM_DISTRIBUTE_INTEREST,
+									0
+								)
+							),0) 'distributeAmount'
+						FROM
+							t_pd_income_dis_detail x,
+							t_pd_income_dis y
+						WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						e.FOUND_DATE,
+						(
+			CASE
+			WHEN (
+				SELECT
+					x.CLOSE_DPERIOD
+				FROM
+					t_pd_wealth_fee_rate x
+				WHERE
+					e.PD_WEALTH_ID = x.PD_WEALTH_ID
+				AND v.beneficialType = x.BENEFICIAL_TYPE
+				AND x.rc_state = "E"
+			) IS NOT NULL THEN
+				(
+					SELECT
+						x.CLOSE_DPERIOD
+					FROM
+						t_pd_wealth_fee_rate x
+					WHERE
+						e.PD_WEALTH_ID = x.PD_WEALTH_ID
+					AND v.beneficialType = x.BENEFICIAL_TYPE
+					AND x.rc_state = "E"
+				)
+			ELSE
+				e.CLOSE_DPERIODS
+			END
+		),
+		e.CLOSE_DPERIOD_UNIT
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10')
+WHEN b.PRODUCT_SUB_TYPE = '01'
+THEN a.TRADE_TOTAL_ASSETS
+END
+	),
+	2
+) "remainSubscription",
+				 ROUND(
+					(
+						SELECT
+							min(x.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+						FROM
+							t_trade_status_info x
+						WHERE
+							x.TRADE_INFO_ID = a.TRADE_INFO_ID
+						AND x.RC_STATE = "E"
+					),
+					2
+				) "remianingShares",
+				b.remark "remark",
+				FUNC_GET_CODE_NAME ('tradeStatus', a.TRADE_STAUS) "tradeStatus"
+				FROM
+					t_trade_info a,
+					t_pd_product b,
+					t_trade_product_info_view v,
+					t_cust_base_info c,
+					t_trade_cust_info d,
+					t_pd_wealth e
+				WHERE
+					a.TRADE_INFO_ID = v.TRADE_INFO_ID
+				AND b.PRODUCT_ID = v.PRODUCT_ID
+				AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+				AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+				AND b.PRODUCT_ID = e.PRODUCT_ID
+				AND a.RC_STATE = "E"
+				AND b.RC_STATE = "E"
+				AND c.RC_STATE = "E"
+				AND d.RC_STATE = "E"
+				AND e.RC_STATE = "E"
+				<include refid="queryBusinessManageListCondition"/>
+				ORDER BY
+					MONTH )t,
+				(select @rowNum := 0) T2
+				ORDER BY serialNo
+</select>
+
+<sql id="queryRedemptionDetailListCondition">
+		<if test="year != null and year !=''" >
+      		AND v.expectOpenDay like '${year}%'
+    	</if>
+  		<if test="month != null and month !=''" >
+      		AND v.expectOpenDay like '${month}%'
+    	</if>
+    	<if test="redemptionStartTime != null and redemptionStartTime !=''" >
+      		 and a.REDEMPTION_OPENDAY <![CDATA[>=]]> '${redemptionStartTime}'
+    	</if>
+    	<if test="redemptionEndTime != null and redemptionEndTime !=''" >
+      		and a.REDEMPTION_OPENDAY <![CDATA[<=]]>  '${redemptionEndTime}'
+    	</if>
+    	<if test="departmentId != null and departmentId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_AGENT F WHERE F.DEPARTMENT_ID = #{departmentId} AND F.AGENT_ID = E.AGENT_ID AND F.RC_STATE = 'E')
+    	</if>
+    	<if test="comId != null and comId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_AGENT F WHERE F.COM_ID = #{comId} AND F.AGENT_ID = E.AGENT_ID AND F.RC_STATE = 'E')
+    	</if>
+    	<if test='productId!= null and productId!=""'>
+			AND B.PRODUCT_ID = #{productId}
+		</if>
+		<if test='productName != null and productName !=""'>
+			AND B.PRODUCT_NAME = #{productName}
+		</if>
+  	</sql>
+<!-- 查询赎回详情信息count数 -->
+<select id="queryRedemptionDetailListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+
+SELECT
+COUNT(1)
+FROM
+t_redemption_info a,
+t_pd_product b,
+t_cust_base_info c,
+t_pd_wealth d,
+t_trade_info e,
+t_trade_product_info_view v,
+t_redemption_trade_info f,
+t_trade_cust_info g
+WHERE
+a.PD_PRODUCT_ID = b.PRODUCT_ID
+AND c.CUSTOMER_NO = a.CUSTOMER_NO
+AND b.PRODUCT_ID = d.PRODUCT_ID
+AND e.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND e.TRADE_INFO_ID = f.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = f.REDEMPTION_INFO_ID
+AND g.TRADE_INFO_ID = e.TRADE_INFO_ID
+AND c.CUST_BASE_INFO_ID = g.CUST_BASE_INFO_ID
+AND a.REDEMPTION_STATUS = "04"
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+<include refid="queryRedemptionDetailListCondition"/>
+</select>
+<!-- 查询赎回详情列表信息 分页0,10 -->
+<select id="queryRedemptionDetailList" parameterType="java.util.Map" resultType="java.util.Map">
+SELECT
+DATE_FORMAT(v.expectOpenDay,"%Y-%m") "month",
+b.PRODUCT_NAME "productName",
+DATE_FORMAT(v.expectOpenDay, "%Y-%m-%d") "foundDate",
+(
+SELECT
+max(x.AGENT_NAME)
+FROM
+t_agent x,
+t_trade_info y,
+t_redemption_trade_info z
+WHERE
+x.AGENT_ID = y.AGENT_ID
+AND y.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "agentName",
+(
+SELECT
+max(s.COM_NAME)
+FROM
+t_def_com s,
+t_agent x,
+t_trade_info y,
+t_redemption_trade_info z
+WHERE
+x.AGENT_ID = y.AGENT_ID
+AND y.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND s.COM_ID = x.COM_ID
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "comName",
+v.subscriptionFee "subscriptionFee",
+ CONCAT(
+	CASE
+	WHEN v.closedPeriods IS NOT NULL THEN
+		v.closedPeriods
+	ELSE
+		d.CLOSE_DPERIODS
+	END,
+	'',
+	FUNC_GET_CODE_NAME (
+		'cloPeriUnit',
+		CASE
+	WHEN v.closedPeriodUnit IS NOT NULL THEN
+		v.closedPeriodUnit
+	ELSE
+		d.CLOSE_DPERIOD_UNIT
+	END
+	)
+) "closedPeriods",
+c.CHN_NAME "custName",
+ FUNC_GET_CODE_NAME ('idType', c.ID_TYPE) "idType",
+ c.ID_NO "idNo",
+(
+	SELECT
+		CONCAT(
+			(
+				SELECT
+					z.BANK_NAME
+				FROM
+					t_def_bank z
+				WHERE
+					z.BANK_ID = y.BANK_CODE
+			),
+			'',
+			y.BRANCH_BANK_NAME
+		)
+	FROM
+		t_trade_cust_acc_rela x,
+		t_cust_acc_info y
+	WHERE
+		x.TRADE_CUST_INFO_ID = g.TRADE_CUST_INFO_ID
+	AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+	AND x.TRADE_ACC_FLAG = '1'
+	AND x.RC_STATE = 'E'
+) "bankName",
+ (
+	SELECT
+		y.BANK_ACC_NO
+	FROM
+		t_trade_cust_acc_rela x,
+		t_cust_acc_info y
+	WHERE
+		x.TRADE_CUST_INFO_ID = g.TRADE_CUST_INFO_ID
+	AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+	AND x.TRADE_ACC_FLAG = '1'
+	AND x.RC_STATE = 'E'
+) "bankAccount",
+ (
+	SELECT
+		max(x.MOBILE)
+	FROM
+		t_cust_contact_info x
+	WHERE
+		x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+	AND x.RC_STATE = 'E'
+) "mobile",
+ (
+	SELECT
+		CONCAT(
+			CONCAT(
+				CONCAT(
+					IFNULL(
+						FUNC_GET_PLACE_NAME ('01', y.PROVINCE),
+						''
+					),
+					'',
+					IFNULL(
+						FUNC_GET_PLACE_NAME ('02', y.CITY),
+						''
+					)
+				),
+				'',
+				IFNULL(
+					FUNC_GET_PLACE_NAME ('03', Y.COUNTRY),
+					''
+				)
+			),
+			'',
+			IFNULL(y.STREET, '')
+		)
+	FROM
+		t_trade_cust_address_rela x,
+		t_cust_address_info y
+	WHERE
+		x.TRADE_CUST_INFO_ID = g.TRADE_CUST_INFO_ID
+	AND y.CUST_ADDRESS_INFO_ID = x.CUST_ADDRESS_INFO_ID
+	AND x.TRADE_ADDRESS_FLAG = '1'
+	AND x.RC_STATE = 'E'
+) "custAddress",
+a.REDEMPTION_OPENDAY "redemptionDate",
+a.ACTU_REDEMPTION_TOTAL_SHARE "redemptionShares",
+ ROUND(
+	(CASE 
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN		(SELECT
+			x.net_value * (
+				min(y.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (e.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = d.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = e.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = d.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E")
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN v.subscriptionFee - (
+						SELECT
+							IFNULL(SUM(
+								IFNULL(
+									x.CONFIRM_DISTRIBUTE_PRINCIPAL,
+									0
+								) + IFNULL(
+									x.CONFIRM_DISTRIBUTE_INTEREST,
+									0
+								)
+							),0) 'distributeAmount'
+						FROM
+							t_pd_income_dis_detail x,
+							t_pd_income_dis y
+						WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						d.FOUND_DATE,
+						(
+							CASE
+							WHEN v.closedPeriods IS NULL THEN
+								d.CLOSE_DPERIODS
+							ELSE
+								v.closedPeriods
+							END
+						),
+						(
+							CASE
+							WHEN v.closedPeriodUnit IS NULL THEN
+								d.CLOSE_DPERIOD_UNIT
+							ELSE
+								v.closedPeriodUnit
+							END
+						)
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND e.TRADE_STAUS = '10')
+WHEN b.PRODUCT_SUB_TYPE = '01'
+THEN v.subscriptionFee
+END
+	),
+	2
+) "remainSubscription",
+ ROUND(
+	(
+		SELECT
+			min(x.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (e.TRADE_INFO_ID)
+		FROM
+			t_trade_status_info x
+		WHERE
+			x.TRADE_INFO_ID = e.TRADE_INFO_ID
+		AND x.RC_STATE = "E"
+	),
+	2
+) "remianingShares"
+FROM
+t_redemption_info a,
+t_pd_product b,
+t_cust_base_info c,
+t_pd_wealth d,
+t_trade_info e,
+t_trade_product_info_view v,
+t_redemption_trade_info f,
+t_trade_cust_info g
+WHERE
+a.PD_PRODUCT_ID = b.PRODUCT_ID
+AND c.CUSTOMER_NO = a.CUSTOMER_NO
+AND b.PRODUCT_ID = d.PRODUCT_ID
+AND e.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND e.TRADE_INFO_ID = f.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = f.REDEMPTION_INFO_ID
+AND g.TRADE_INFO_ID = e.TRADE_INFO_ID
+AND c.CUST_BASE_INFO_ID = g.CUST_BASE_INFO_ID
+AND a.REDEMPTION_STATUS = "04"
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+<include refid="queryRedemptionDetailListCondition"/>
+ORDER BY
+		MONTH
+LIMIT #{startIndex} , #{endIndex} 
+</select>
+<!-- 查询所有赎回详情信息 -->
+<select id="queryRedemptionDetail" parameterType="java.util.Map" resultType="java.util.Map">
+
+SELECT
+(@rowNum:=@rowNum+1) as "serialNo",
+t.*
+FROM(
+SELECT
+DATE_FORMAT(v.expectOpenDay,"%Y-%m") "month",
+b.PRODUCT_NAME "productName",
+DATE_FORMAT(v.expectOpenDay, "%Y-%m-%d") "foundDate",
+(
+SELECT
+max(x.AGENT_NAME)
+FROM
+t_agent x,
+t_trade_info y,
+t_redemption_trade_info z
+WHERE
+x.AGENT_ID = y.AGENT_ID
+AND y.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "agentName",
+(
+SELECT
+max(s.COM_NAME)
+FROM
+t_def_com s,
+t_agent x,
+t_trade_info y,
+t_redemption_trade_info z
+WHERE
+x.AGENT_ID = y.AGENT_ID
+AND y.TRADE_INFO_ID = z.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = z.REDEMPTION_INFO_ID
+AND s.COM_ID = x.COM_ID
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+AND z.RC_STATE = "E"
+) "comName",
+v.subscriptionFee "subscriptionFee",
+ CONCAT(
+	CASE
+	WHEN v.closedPeriods IS NOT NULL THEN
+		v.closedPeriods
+	ELSE
+		d.CLOSE_DPERIODS
+	END,
+	'',
+	FUNC_GET_CODE_NAME (
+		'cloPeriUnit',
+		CASE
+	WHEN v.closedPeriodUnit IS NOT NULL THEN
+		v.closedPeriodUnit
+	ELSE
+		d.CLOSE_DPERIOD_UNIT
+	END
+	)
+) "closedPeriods",
+c.CHN_NAME "custName",
+ FUNC_GET_CODE_NAME ('idType', c.ID_TYPE) "idType",
+ c.ID_NO "idNo",
+(
+	SELECT
+		CONCAT(
+			(
+				SELECT
+					z.BANK_NAME
+				FROM
+					t_def_bank z
+				WHERE
+					z.BANK_ID = y.BANK_CODE
+			),
+			'',
+			y.BRANCH_BANK_NAME
+		)
+	FROM
+		t_trade_cust_acc_rela x,
+		t_cust_acc_info y
+	WHERE
+		x.TRADE_CUST_INFO_ID = g.TRADE_CUST_INFO_ID
+	AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+	AND x.TRADE_ACC_FLAG = '1'
+	AND x.RC_STATE = 'E'
+) "bankName",
+ (
+	SELECT
+		y.BANK_ACC_NO
+	FROM
+		t_trade_cust_acc_rela x,
+		t_cust_acc_info y
+	WHERE
+		x.TRADE_CUST_INFO_ID = g.TRADE_CUST_INFO_ID
+	AND y.CUST_ACC_INFO_ID = x.CUST_ACC_INFO_ID
+	AND x.TRADE_ACC_FLAG = '1'
+	AND x.RC_STATE = 'E'
+) "bankAccount",
+ (
+	SELECT
+		max(x.MOBILE)
+	FROM
+		t_cust_contact_info x
+	WHERE
+		x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+	AND x.RC_STATE = 'E'
+) "mobile",
+ (
+	SELECT
+		CONCAT(
+			CONCAT(
+				CONCAT(
+					IFNULL(
+						FUNC_GET_PLACE_NAME ('01', y.PROVINCE),
+						''
+					),
+					'',
+					IFNULL(
+						FUNC_GET_PLACE_NAME ('02', y.CITY),
+						''
+					)
+				),
+				'',
+				IFNULL(
+					FUNC_GET_PLACE_NAME ('03', Y.COUNTRY),
+					''
+				)
+			),
+			'',
+			IFNULL(y.STREET, '')
+		)
+	FROM
+		t_trade_cust_address_rela x,
+		t_cust_address_info y
+	WHERE
+		x.TRADE_CUST_INFO_ID = g.TRADE_CUST_INFO_ID
+	AND y.CUST_ADDRESS_INFO_ID = x.CUST_ADDRESS_INFO_ID
+	AND x.TRADE_ADDRESS_FLAG = '1'
+	AND x.RC_STATE = 'E'
+) "custAddress",
+a.REDEMPTION_OPENDAY "redemptionDate",
+a.ACTU_REDEMPTION_TOTAL_SHARE "redemptionShares",
+ ROUND(
+	(CASE 
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN		(SELECT
+			x.net_value * (
+				min(y.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (e.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = d.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = e.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = d.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E")
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN v.subscriptionFee - (
+						SELECT
+							IFNULL(SUM(
+								IFNULL(
+									x.CONFIRM_DISTRIBUTE_PRINCIPAL,
+									0
+								) + IFNULL(
+									x.CONFIRM_DISTRIBUTE_INTEREST,
+									0
+								)
+							),0) 'distributeAmount'
+						FROM
+							t_pd_income_dis_detail x,
+							t_pd_income_dis y
+						WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						d.FOUND_DATE,
+						(
+							CASE
+							WHEN v.closedPeriods IS NULL THEN
+								d.CLOSE_DPERIODS
+							ELSE
+								v.closedPeriods
+							END
+						),
+						(
+							CASE
+							WHEN v.closedPeriodUnit IS NULL THEN
+								d.CLOSE_DPERIOD_UNIT
+							ELSE
+								v.closedPeriodUnit
+							END
+						)
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND e.TRADE_STAUS = '10')
+WHEN b.PRODUCT_SUB_TYPE = '01'
+THEN v.subscriptionFee
+END
+	),
+	2
+) "remainSubscription",
+ ROUND(
+	(
+		SELECT
+			min(x.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (e.TRADE_INFO_ID)
+		FROM
+			t_trade_status_info x
+		WHERE
+			x.TRADE_INFO_ID = e.TRADE_INFO_ID
+		AND x.RC_STATE = "E"
+	),
+	2
+) "remianingShares"
+FROM
+t_redemption_info a,
+t_pd_product b,
+t_cust_base_info c,
+t_pd_wealth d,
+t_trade_info e,
+t_trade_product_info_view v,
+t_redemption_trade_info f,
+t_trade_cust_info g
+WHERE
+a.PD_PRODUCT_ID = b.PRODUCT_ID
+AND c.CUSTOMER_NO = a.CUSTOMER_NO
+AND b.PRODUCT_ID = d.PRODUCT_ID
+AND e.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND e.TRADE_INFO_ID = f.TRADE_INFO_ID
+AND a.REDEMPTION_INFO_ID = f.REDEMPTION_INFO_ID
+AND g.TRADE_INFO_ID = e.TRADE_INFO_ID
+AND c.CUST_BASE_INFO_ID = g.CUST_BASE_INFO_ID
+AND a.REDEMPTION_STATUS = "04"
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+<include refid="queryRedemptionDetailListCondition"/>
+ORDER BY MONTH
+) t,
+(SELECT @rowNum := 0) T4
+ORDER BY serialNo
+</select>
+
+<!-- 查询募集期产品信息count -->
+<select id="queryRaisingProductsListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+				SELECT
+	COUNT(1)
+FROM
+	t_trade_info a,
+	t_pd_product b,
+	t_trade_product_info_view v,
+	t_cust_base_info c,
+	t_trade_cust_info d,
+	t_pd_wealth e,
+	t_agent f
+WHERE
+	a.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND e.PRODUCT_ID = b.PRODUCT_ID
+AND c.agent_id = f.agent_id
+AND e.RAISE_END_DATE > CURDATE()
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+<include refid="queryBusinessManageListCondition"/>
+</select>
+
+<!-- 查询募集期产品列表信息 分页 0,10 -->
+<select id="queryRaisingProductsList" parameterType="java.util.Map" resultType="java.util.Map">
+				SELECT
+						CONCAT(DATE_FORMAT(e.RAISE_START_DATE,"%Y/%m/%d"),'-',DATE_FORMAT(e.RAISE_END_DATE,"%Y/%m/%d")) "date",
+						CASE
+						WHEN b.PRODUCT_SUB_TYPE = '01'
+						THEN '股权产品'
+						WHEN b.PRODUCT_SUB_TYPE = '02'
+						THEN '固定产品'
+						WHEN b.PRODUCT_SUB_TYPE = '03'
+						THEN '浮动产品'
+						WHEN b.PRODUCT_SUB_TYPE = '04'
+						THEN '海外产品'
+						END "productSubType",
+						b.PRODUCT_NAME "productName",
+						CONCAT(LEFT(c.CHN_NAME,1),'',LPAD((RIGHT(c.CHN_NAME,0)),(LENGTH(c.CHN_NAME)-2)/4,'*'))  "custName",
+						f.AGENT_NAME "agentName",
+						v.subscriptionFee "subscriptionFee"
+				FROM
+						t_trade_info a,
+						t_pd_product b,
+						t_trade_product_info_view v,
+						t_cust_base_info c,
+						t_trade_cust_info d,
+						t_pd_wealth e,
+						t_agent f
+				WHERE
+						a.TRADE_INFO_ID = v.TRADE_INFO_ID
+						AND b.PRODUCT_ID = v.PRODUCT_ID
+						AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+						AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+						AND e.PRODUCT_ID = b.PRODUCT_ID
+						AND c.agent_id = f.agent_id
+						AND e.RAISE_END_DATE > CURDATE()
+						AND a.RC_STATE = "E"
+						AND b.RC_STATE = "E"
+						AND c.RC_STATE = "E"
+						AND d.RC_STATE = "E"
+						AND e.RC_STATE = "E"
+						AND f.RC_STATE = "E"
+				<include refid="queryBusinessManageListCondition"/>
+						ORDER BY date
+				LIMIT #{startIndex} , #{endIndex} 
+</select>
+<!-- 查询所有募集期产品信息 -->
+<select id="queryRaisingProductsDetailList" parameterType="java.util.Map" resultType="java.util.Map">
+				
+					SELECT
+					(@rowNum:=@rowNum+1) as "serialNo",
+					t.*
+					FROM(
+					SELECT
+						CONCAT(DATE_FORMAT(e.RAISE_START_DATE,"%Y/%m/%d"),'-',DATE_FORMAT(e.RAISE_END_DATE,"%Y/%m/%d")) "date",
+						CASE
+						WHEN b.PRODUCT_SUB_TYPE = '01'
+						THEN '股权产品'
+						WHEN b.PRODUCT_SUB_TYPE = '02'
+						THEN '固定产品'
+						WHEN b.PRODUCT_SUB_TYPE = '03'
+						THEN '浮动产品'
+						WHEN b.PRODUCT_SUB_TYPE = '04'
+						THEN '海外产品'
+						END "productSubType",
+						b.PRODUCT_NAME "productName",
+						CONCAT(LEFT(c.CHN_NAME,1),'',LPAD((RIGHT(c.CHN_NAME,0)),(LENGTH(c.CHN_NAME)-2)/4,'*'))  "custName",
+						f.AGENT_NAME "agentName",
+						v.subscriptionFee "subscriptionFee"
+				FROM
+						t_trade_info a,
+						t_pd_product b,
+						t_trade_product_info_view v,
+						t_cust_base_info c,
+						t_trade_cust_info d,
+						t_pd_wealth e,
+						t_agent f
+				WHERE
+						a.TRADE_INFO_ID = v.TRADE_INFO_ID
+						AND b.PRODUCT_ID = v.PRODUCT_ID
+						AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+						AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+						AND e.PRODUCT_ID = b.PRODUCT_ID
+						AND c.agent_id = f.agent_id
+						AND e.RAISE_END_DATE > CURDATE()
+						AND a.RC_STATE = "E"
+						AND b.RC_STATE = "E"
+						AND c.RC_STATE = "E"
+						AND d.RC_STATE = "E"
+						AND e.RC_STATE = "E"
+						AND f.RC_STATE = "E"
+				<include refid="queryBusinessManageListCondition"/>
+						ORDER BY date )t,
+						(SELECT @rowNum := 0) T4
+						ORDER BY serialNo
+</select>
+
+<sql id="querySaleProductsListCondition">
+		<if test="year != null and year !=''" >
+      		AND CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE like '${year}%'
+				ELSE
+				v.expectOpenDay like '${year}%'
+				END 
+    	</if>
+  		<if test="month != null and month !=''" >
+      		AND CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE like '${month}%'
+				ELSE
+				v.expectOpenDay like '${month}%'
+				END   
+    	</if>
+    	<if test="saleProductsStartTime != null and saleProductsStartTime !=''" >
+      		 	AND	CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE <![CDATA[>=]]> '${saleProductsStartTime}'
+				ELSE
+				v.expectOpenDay <![CDATA[>=]]> '${saleProductsStartTime}'
+				END  
+    	</if>
+    	<if test="saleProductsEndTime != null and saleProductsEndTime !=''" >
+    			AND	CASE
+				WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+				THEN E.FOUND_DATE <![CDATA[<=]]>  '${saleProductsEndTime}'
+				ELSE
+				v.expectOpenDay <![CDATA[<=]]>  '${saleProductsEndTime}'
+				END  
+    	</if>
+    	<if test="departmentId != null and departmentId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_AGENT F WHERE F.DEPARTMENT_ID = #{departmentId} AND F.AGENT_ID = A.AGENT_ID AND F.RC_STATE = 'E')
+    	</if>
+    	<if test="comId != null and comId !=''" >
+      		AND EXISTS(SELECT 'X' FROM T_AGENT F WHERE F.COM_ID = #{comId} AND F.AGENT_ID = A.AGENT_ID AND F.RC_STATE = 'E')
+    	</if>
+    	<if test='productId!= null and productId!=""'>
+			AND B.PRODUCT_ID = #{productId}
+		</if>
+		<if test='productName != null and productName !=""'>
+			AND B.PRODUCT_NAME = #{productName}
+		</if>
+  	</sql>
+<!-- 查询销售清单count -->
+<select id="querySaleProductsListCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+SELECT
+COUNT(1)
+FROM
+	t_trade_info a,
+	t_pd_product b,
+	t_trade_product_info_view v,
+	t_cust_base_info c,
+	t_trade_cust_info d,
+	t_pd_wealth e,
+t_agent f,
+t_trade_status_info g
+WHERE
+	a.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND e.PRODUCT_ID = b.PRODUCT_ID
+AND a.AGENT_ID = f.AGENT_ID
+AND g.TRADE_INFO_ID = a.TRADE_INFO_ID
+AND a.TRADE_STAUS in ("10","11","12","13")
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+<include refid="querySaleProductsListCondition"/>
+</select>
+
+<!-- 查询销售清单列表 分页0,10 -->
+<select id="querySaleProductsList" parameterType="java.util.Map" resultType="java.util.Map">
+SELECT
+
+					CASE
+					WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+					THEN DATE_FORMAT(e.FOUND_DATE, "%Y/%m")
+					ELSE
+					DATE_FORMAT(v.expectOpenDay, "%Y/%m")
+					END "month",
+CASE
+WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+THEN DATE_FORMAT(e.FOUND_DATE,'%Y-%m-%d')
+ELSE DATE_FORMAT(v.expectOpenDay,'%Y-%m-%d') 
+END "productOpenDate",
+FUNC_GET_CODE_NAME('customerType',
+(SELECT
+x.CUST_TYPE
+FROM
+t_cust_oth_info x
+WHERE
+x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND x.RC_STATE = 'E'
+)) "custType",
+c.CUSTOMER_NO "custNo",
+CONCAT(LEFT(c.CHN_NAME,1),'',LPAD((RIGHT(c.CHN_NAME,0)),(LENGTH(c.CHN_NAME)-2)/4,'*'))  "custName",
+CASE
+WHEN
+(
+CASE
+WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+THEN DATE_FORMAT(e.FOUND_DATE,'%Y-%m-%d')
+ELSE DATE_FORMAT(v.expectOpenDay,'%Y-%m-%d') 
+END
+) = (SELECT
+												MIN(CASE
+												WHEN r.PRODUCT_SUB_TYPE = "01" OR r.PRODUCT_SUB_TYPE = "02"
+												THEN DATE_FORMAT(s.FOUND_DATE,'%Y-%m-%d')
+												ELSE DATE_FORMAT(u.expectOpenDay,'%Y-%m-%d') 
+												END)
+												FROM
+												t_cust_base_info o,
+												t_trade_info p,
+												t_trade_cust_info q,
+												t_pd_product r,
+												t_trade_product_info_view u,
+												t_pd_wealth s
+												WHERE 
+												o.cust_base_info_id = q.cust_base_info_id
+												AND p.trade_info_id = q.trade_info_id
+												AND r.product_id = u.product_id
+												AND p.trade_info_id = u.trade_info_id
+												AND r.product_id = s.product_id
+												AND o.cust_base_info_id = c.cust_base_info_id
+												AND o.rc_state = 'E'
+												AND p.rc_state = 'E'
+												AND q.rc_state = 'E'
+												AND r.rc_state = 'E'
+												AND s.rc_state = 'E')
+THEN '是'
+ELSE '否'
+END   "custLevel",
+f.AGENT_NAME "agentName",
+(SELECT
+x.COM_NAME
+FROM
+t_def_com x
+WHERE
+x.COM_ID = f.COM_ID
+AND x.RC_STATE = 'E' 
+) "comName",
+(SELECT
+x.DEPARTMENT_NAME
+FROM
+t_def_department x
+WHERE
+x.DEPARTMENT_ID = f.DEPARTMENT_ID
+AND x.RC_STATE = 'E' 
+) "departmentName",
+CASE
+WHEN b.PRODUCT_SUB_TYPE = "01" THEN
+	"股权类产品"
+WHEN b.PRODUCT_SUB_TYPE = "02" THEN
+	"固定类产品"
+WHEN b.PRODUCT_SUB_TYPE = "03" THEN
+	"浮动类产品"
+WHEN b.PRODUCT_SUB_TYPE = "04" THEN
+	"海外类产品"
+END "productSubType",
+b.PRODUCT_NAME "productName",
+ CONCAT(
+	CASE
+	WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL THEN
+		(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+	ELSE
+		e.CLOSE_DPERIODS
+	END,
+	'',
+	FUNC_GET_CODE_NAME (
+		'cloPeriUnit',
+		e.CLOSE_DPERIOD_UNIT
+	)
+) "closedPeriods",
+CASE WHEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) IS NOT NULL
+THEN
+(
+CASE WHEN
+(SELECT
+x.TRANSFER_ALL
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) = '02'
+THEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) 
+ELSE
+(
+CASE
+WHEN
+B.PRODUCT_SUB_TYPE in('03','04') 
+THEN NULL
+ELSE
+FUNC_FOUNDATE_CLOSED_ENDDATE (
+e.FOUND_DATE,
+						(
+							CASE
+							WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL 
+THEN
+(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+							ELSE
+								e.CLOSE_DPERIODS
+							END
+						),
+						e.CLOSE_DPERIOD_UNIT
+					)
+END
+)
+END
+)
+ELSE
+(
+CASE
+WHEN
+B.PRODUCT_SUB_TYPE in('03','04') 
+THEN NULL
+ELSE
+FUNC_FOUNDATE_CLOSED_ENDDATE (
+e.FOUND_DATE,
+						(
+							CASE
+							WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL 
+THEN
+(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+							ELSE
+								e.CLOSE_DPERIODS
+							END
+						),
+						e.CLOSE_DPERIOD_UNIT
+					)
+END
+)
+END "endDate",
+v.subscriptionFee "subscriptionFee",
+ (
+	SELECT
+		x.SUBSCRIPTION_FEE_RATIO
+	FROM
+		t_pd_wealth_charge_rate x
+	WHERE
+		x.PD_WEALTH_ID = e.PD_WEALTH_ID
+	AND x.RC_STATE = 'E'
+) "subscriptionFeeRatio",
+ v.reductionRadio "reductionRadio",
+
+ROUND(g.ACTU_SUBSCRIPTION_AMOUNT*(100-IFNULL(reductionRadio,0))/100*IFNULL((
+	SELECT
+		x.SUBSCRIPTION_FEE_RATIO
+	FROM
+		t_pd_wealth_charge_rate x
+	WHERE
+		x.PD_WEALTH_ID = e.PD_WEALTH_ID
+	AND x.RC_STATE = 'E'
+),0) /100,2) "actualSubscriptionFee",
+(
+CASE
+WHEN (SELECT
+COUNT(1)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND q.PRODUCT_ID = b.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS in ("10","13")
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+) = 1
+THEN "首次"
+WHEN  
+(SELECT
+COUNT(1)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND q.PRODUCT_ID = b.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS in ("10","13")
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+) > 1
+THEN 
+(
+CASE
+WHEN a.TRADE_DATE = (SELECT
+MIN(p.TRADE_DATE)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND q.PRODUCT_ID = b.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS in ("10","13")
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E")
+THEN "首次"
+ELSE "追加"
+END
+)
+END 
+)
+"subscriptionType",
+ROUND(
+CASE
+WHEN 
+		b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+THEN
+(CASE
+WHEN 
+		e.CLOSE_DPERIOD_UNIT = 'D'
+THEN 
+(
+CASE
+WHEN(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						) > 364
+THEN v.subscriptionFee
+ELSE
+(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						)/365*v.subscriptionFee
+END)
+WHEN 
+		e.CLOSE_DPERIOD_UNIT = 'M'
+THEN 
+(
+CASE
+WHEN(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						
+)>11
+THEN v.subscriptionFee
+ELSE
+(
+	(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						)
+)/12*v.subscriptionFee
+END)
+ELSE v.subscriptionFee
+END)
+ELSE
+v.subscriptionFee
+END
+,2) "addScale",
+CASE WHEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) IS NOT NULL
+THEN
+'转让清算'
+ELSE
+(CASE
+WHEN 
+FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID) > 0
+AND
+FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID) <![CDATA[<]]>
+(
+		SELECT
+			max(x.subscription_copies )
+		FROM
+			t_trade_status_info x
+		WHERE
+			x.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.RC_STATE = "E"
+
+	) 
+THEN '部分清算'
+WHEN
+(
+		SELECT
+			max(x.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+		FROM
+			t_trade_status_info x
+		WHERE
+			x.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.RC_STATE = "E"
+	) = 0
+THEN '全部清算'
+WHEN 
+(
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y ,
+t_pd_wealth_fee_rate z
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND e.PD_WEALTH_ID = z.PD_WEALTH_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						e.FOUND_DATE,
+						(
+							CASE
+							WHEN z.CLOSE_DPERIOD IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								z.CLOSE_DPERIOD
+							END
+						),
+						(
+							CASE
+							WHEN z.CLOSE_DPERIODUNIT IS NULL THEN
+								e.CLOSE_DPERIOD_UNIT
+							ELSE
+								z.CLOSE_DPERIODUNIT
+							END
+						)
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+) <![CDATA[<]]> v.subscriptionFee
+AND
+(
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y ,
+t_pd_wealth_fee_rate z
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND e.PD_WEALTH_ID = z.PD_WEALTH_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						e.FOUND_DATE,
+						(
+							CASE
+							WHEN z.CLOSE_DPERIOD IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								z.CLOSE_DPERIOD
+							END
+						),
+						(
+							CASE
+							WHEN z.CLOSE_DPERIODUNIT IS NULL THEN
+								e.CLOSE_DPERIOD_UNIT
+							ELSE
+								z.CLOSE_DPERIODUNIT
+							END
+						)
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+) > 0
+THEN '部分清算'
+WHEN
+(
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y 
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+) = v.subscriptionFee
+THEN '全部清算'
+END)
+END "clearType",
+ROUND(
+CASE WHEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) IS NOT NULL
+THEN
+(SELECT
+x.TRANSFER_ASSET
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) 
+ELSE
+(
+CASE
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN (
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y 
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+)
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN (
+SELECT
+			x.net_value * (FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = e.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = e.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E")
+END 
+)
+END
+,2)"clearedScale",
+
+ROUND(CASE
+WHEN b.PRODUCT_SUB_TYPE = '01'
+THEN a.TRADE_TOTAL_ASSETS
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN a.TRADE_TOTAL_ASSETS - (
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y 
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+)
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN (
+SELECT
+			x.net_value * (
+y.subscription_copies-FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = e.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = e.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E") 
+END,2) "continuedScale",
+(
+		SELECT
+			t.AGENT_ID
+		FROM
+			t_agent t
+		WHERE
+			t.AGENT_ID = (
+				SELECT
+					m.agent_id
+				FROM
+					T_CUST_BELONG_OPERATION m
+				WHERE
+					m.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+				AND M.RC_STATE = 'E'
+				AND m.belong_end_date = (
+					SELECT
+						Max(n.belong_end_date)
+					FROM
+						T_CUST_BELONG_OPERATION n
+					WHERE
+						n.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+					AND n.RC_STATE = 'E'
+				)
+			)
+		AND t.RC_STATE = 'E'
+	) "originAgentId",
+(
+		SELECT
+			t.AGENT_NAME
+		FROM
+			t_agent t
+		WHERE
+			t.AGENT_ID = (
+				SELECT
+					m.agent_id
+				FROM
+					T_CUST_BELONG_OPERATION m
+				WHERE
+					m.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+				AND M.RC_STATE = 'E'
+				AND m.belong_end_date = (
+					SELECT
+						Max(n.belong_end_date)
+					FROM
+						T_CUST_BELONG_OPERATION n
+					WHERE
+						n.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+					AND n.RC_STATE = 'E'
+				)
+			)
+		AND t.RC_STATE = 'E'
+	) "originAgentName",
+(SELECT
+x.COM_NAME
+FROM
+t_def_com x
+WHERE
+x.COM_ID = f.COM_ID
+AND f.AGENT_ID = originAgentId
+AND x.RC_STATE = 'E'
+) "originComName",
+(SELECT
+x.DEPARTMENT_NAME
+FROM
+t_def_department x
+WHERE
+x.DEPARTMENT_ID = f.DEPARTMENT_ID
+AND f.AGENT_ID = originAgentId
+AND x.RC_STATE = 'E'
+) "originDepartmentName",
+ROUND(CASE
+WHEN v.beneficialType IS NOT NULL
+THEN (SELECT 
+x.EXPECTED_FEE_RATE
+FROM
+t_pd_wealth_fee_rate x
+WHERE 
+x.beneficial_type = v.beneficialType
+AND x.PD_WEALTH_ID = e.PD_WEALTH_ID
+AND x.rc_state = "E")
+ELSE (
+SELECT
+MAX(x.EXPECTED_FEE_RATE)
+FROM
+t_pd_wealth_fee_rate x
+WHERE 
+ x.PD_WEALTH_ID = e.PD_WEALTH_ID
+AND x.rc_state = "E"
+)
+END,4) "originExpectFeeRate",
+				b.remark "remark"
+FROM
+	t_trade_info a,
+	t_pd_product b,
+	t_trade_product_info_view v,
+	t_cust_base_info c,
+	t_trade_cust_info d,
+	t_pd_wealth e,
+t_agent f,
+t_trade_status_info g
+WHERE
+	a.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND e.PRODUCT_ID = b.PRODUCT_ID
+AND a.AGENT_ID = f.AGENT_ID
+AND g.TRADE_INFO_ID = a.TRADE_INFO_ID
+AND a.TRADE_STAUS in ("10","11","12","13")
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+<include refid="querySaleProductsListCondition"/>
+ORDER BY
+	MONTH
+LIMIT #{startIndex} , #{endIndex} 
+</select>
+
+<!-- 查询销售清单所有信息 -->
+<select id="querySaleProductsDetailList" parameterType="java.util.Map" resultType="java.util.Map">
+SELECT
+(@rowNum:=@rowNum+1) as "serialNo",
+t.*
+FROM(
+SELECT
+					CASE
+					WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+					THEN DATE_FORMAT(e.FOUND_DATE, "%Y/%m")
+					ELSE
+					DATE_FORMAT(v.expectOpenDay, "%Y/%m")
+					END "month",
+CASE
+WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+THEN DATE_FORMAT(e.FOUND_DATE,'%Y-%m-%d')
+ELSE DATE_FORMAT(v.expectOpenDay,'%Y-%m-%d') 
+END "productOpenDate",
+FUNC_GET_CODE_NAME('customerType',
+(SELECT
+x.CUST_TYPE
+FROM
+t_cust_oth_info x
+WHERE
+x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND x.RC_STATE = 'E'
+)) "custType",
+c.CUSTOMER_NO "custNo",
+c.CHN_NAME "custName",
+CASE
+WHEN
+(
+CASE
+WHEN b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+THEN DATE_FORMAT(e.FOUND_DATE,'%Y-%m-%d')
+ELSE DATE_FORMAT(v.expectOpenDay,'%Y-%m-%d') 
+END
+) = (SELECT
+												MIN(CASE
+												WHEN r.PRODUCT_SUB_TYPE = "01" OR r.PRODUCT_SUB_TYPE = "02"
+												THEN DATE_FORMAT(s.FOUND_DATE,'%Y-%m-%d')
+												ELSE DATE_FORMAT(u.expectOpenDay,'%Y-%m-%d') 
+												END)
+												FROM
+												t_cust_base_info o,
+												t_trade_info p,
+												t_trade_cust_info q,
+												t_pd_product r,
+												t_trade_product_info_view u,
+												t_pd_wealth s
+												WHERE 
+												o.cust_base_info_id = q.cust_base_info_id
+												AND p.trade_info_id = q.trade_info_id
+												AND r.product_id = u.product_id
+												AND p.trade_info_id = u.trade_info_id
+												AND r.product_id = s.product_id
+												AND o.cust_base_info_id = c.cust_base_info_id
+												AND o.rc_state = 'E'
+												AND p.rc_state = 'E'
+												AND q.rc_state = 'E'
+												AND r.rc_state = 'E'
+												AND s.rc_state = 'E')
+THEN '是'
+ELSE '否'
+END   "custLevel",
+f.AGENT_NAME "agentName",
+(SELECT
+x.COM_NAME
+FROM
+t_def_com x
+WHERE
+x.COM_ID = f.COM_ID
+AND x.RC_STATE = 'E' 
+) "comName",
+(SELECT
+x.DEPARTMENT_NAME
+FROM
+t_def_department x
+WHERE
+x.DEPARTMENT_ID = f.DEPARTMENT_ID
+AND x.RC_STATE = 'E' 
+) "departmentName",
+CASE
+WHEN b.PRODUCT_SUB_TYPE = "01" THEN
+	"股权类产品"
+WHEN b.PRODUCT_SUB_TYPE = "02" THEN
+	"固定类产品"
+WHEN b.PRODUCT_SUB_TYPE = "03" THEN
+	"浮动类产品"
+WHEN b.PRODUCT_SUB_TYPE = "04" THEN
+	"海外类产品"
+END "productSubType",
+b.PRODUCT_NAME "productName",
+ CONCAT(
+	CASE
+	WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL THEN
+		(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+	ELSE
+		e.CLOSE_DPERIODS
+	END,
+	'',
+	FUNC_GET_CODE_NAME (
+		'cloPeriUnit',
+		e.CLOSE_DPERIOD_UNIT
+	)
+) "closedPeriods",
+CASE WHEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) IS NOT NULL
+THEN
+(
+CASE WHEN
+(SELECT
+x.TRANSFER_ALL
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) = '02'
+THEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) 
+ELSE
+(
+CASE
+WHEN
+B.PRODUCT_SUB_TYPE in('03','04') 
+THEN NULL
+ELSE
+FUNC_FOUNDATE_CLOSED_ENDDATE (
+e.FOUND_DATE,
+						(
+							CASE
+							WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL 
+THEN
+(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+							ELSE
+								e.CLOSE_DPERIODS
+							END
+						),
+						e.CLOSE_DPERIOD_UNIT
+					)
+END
+)
+END
+)
+ELSE
+(
+CASE
+WHEN
+B.PRODUCT_SUB_TYPE in('03','04') 
+THEN NULL
+ELSE
+FUNC_FOUNDATE_CLOSED_ENDDATE (
+e.FOUND_DATE,
+						(
+							CASE
+							WHEN (
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) IS NOT NULL 
+THEN
+(
+SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)
+							ELSE
+								e.CLOSE_DPERIODS
+							END
+						),
+						e.CLOSE_DPERIOD_UNIT
+					)
+END
+)
+END "endDate",
+v.subscriptionFee "subscriptionFee",
+ (
+	SELECT
+		x.SUBSCRIPTION_FEE_RATIO
+	FROM
+		t_pd_wealth_charge_rate x
+	WHERE
+		x.PD_WEALTH_ID = e.PD_WEALTH_ID
+	AND x.RC_STATE = 'E'
+) "subscriptionFeeRatio",
+ v.reductionRadio "reductionRadio",
+
+ROUND(g.ACTU_SUBSCRIPTION_AMOUNT*(100-IFNULL(reductionRadio,0))/100*IFNULL((
+	SELECT
+		x.SUBSCRIPTION_FEE_RATIO
+	FROM
+		t_pd_wealth_charge_rate x
+	WHERE
+		x.PD_WEALTH_ID = e.PD_WEALTH_ID
+	AND x.RC_STATE = 'E'
+),0) /100,2) "actualSubscriptionFee",
+(
+CASE
+WHEN (SELECT
+COUNT(1)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND q.PRODUCT_ID = b.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS in ("10","13")
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+) = 1
+THEN "首次"
+WHEN  
+(SELECT
+COUNT(1)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND q.PRODUCT_ID = b.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS in ("10","13")
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E"
+) > 1
+THEN 
+(
+CASE
+WHEN a.TRADE_DATE = (SELECT
+MIN(p.TRADE_DATE)
+FROM
+	t_trade_info p,
+	t_pd_product q,
+	t_trade_product_info_view s,
+	t_cust_base_info x,
+	t_trade_cust_info y
+WHERE
+	p.TRADE_INFO_ID = s.TRADE_INFO_ID
+AND q.PRODUCT_ID = s.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = y.CUST_BASE_INFO_ID
+AND p.TRADE_INFO_ID = y.TRADE_INFO_ID
+AND q.PRODUCT_ID = b.PRODUCT_ID
+AND x.CUST_BASE_INFO_ID = c.CUST_BASE_INFO_ID
+AND p.TRADE_STAUS in ("10","13")
+AND p.RC_STATE = "E"
+AND q.RC_STATE = "E"
+AND x.RC_STATE = "E"
+AND y.RC_STATE = "E")
+THEN "首次"
+ELSE "追加"
+END
+)
+END 
+)
+"subscriptionType",
+ROUND(
+CASE
+WHEN 
+		b.PRODUCT_SUB_TYPE = "01" OR b.PRODUCT_SUB_TYPE = "02"
+THEN
+(CASE
+WHEN 
+		e.CLOSE_DPERIOD_UNIT = 'D'
+THEN 
+(
+CASE
+WHEN(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						) > 364
+THEN v.subscriptionFee
+ELSE
+(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						)/365*v.subscriptionFee
+END)
+WHEN 
+		e.CLOSE_DPERIOD_UNIT = 'M'
+THEN 
+(
+CASE
+WHEN(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						
+)>11
+THEN v.subscriptionFee
+ELSE
+(
+	(
+							CASE
+							WHEN 
+(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+)  IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								(SELECT
+x.CLOSE_DPERIOD
+FROM
+t_pd_wealth_fee_rate x
+WHERE
+e.PD_WEALTH_ID = x.PD_WEALTH_ID
+AND v.beneficialType = x.BENEFICIAL_TYPE
+AND x.rc_state = "E"
+) 
+							END
+						)
+)/12*v.subscriptionFee
+END)
+ELSE v.subscriptionFee
+END)
+ELSE
+v.subscriptionFee
+END
+,2) "addScale",
+CASE WHEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) IS NOT NULL
+THEN
+'转让清算'
+ELSE
+(CASE
+WHEN 
+FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID) > 0
+AND
+FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID) <![CDATA[<]]>
+(
+		SELECT
+			max(x.subscription_copies )
+		FROM
+			t_trade_status_info x
+		WHERE
+			x.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.RC_STATE = "E"
+
+	) 
+THEN '部分清算'
+WHEN
+(
+		SELECT
+			max(x.subscription_copies) - FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+		FROM
+			t_trade_status_info x
+		WHERE
+			x.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.RC_STATE = "E"
+	) = 0
+THEN '全部清算'
+WHEN 
+(
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y ,
+t_pd_wealth_fee_rate z
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND e.PD_WEALTH_ID = z.PD_WEALTH_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						e.FOUND_DATE,
+						(
+							CASE
+							WHEN z.CLOSE_DPERIOD IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								z.CLOSE_DPERIOD
+							END
+						),
+						(
+							CASE
+							WHEN z.CLOSE_DPERIODUNIT IS NULL THEN
+								e.CLOSE_DPERIOD_UNIT
+							ELSE
+								z.CLOSE_DPERIODUNIT
+							END
+						)
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+) <![CDATA[<]]> v.subscriptionFee
+AND
+(
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y ,
+t_pd_wealth_fee_rate z
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND e.PD_WEALTH_ID = z.PD_WEALTH_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND (
+					FUNC_FOUNDATE_CLOSED_ENDDATE (
+						e.FOUND_DATE,
+						(
+							CASE
+							WHEN z.CLOSE_DPERIOD IS NULL THEN
+								e.CLOSE_DPERIODS
+							ELSE
+								z.CLOSE_DPERIOD
+							END
+						),
+						(
+							CASE
+							WHEN z.CLOSE_DPERIODUNIT IS NULL THEN
+								e.CLOSE_DPERIOD_UNIT
+							ELSE
+								z.CLOSE_DPERIODUNIT
+							END
+						)
+					)
+				) > CURDATE()
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+) > 0
+THEN '部分清算'
+WHEN
+(
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y 
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+) = v.subscriptionFee
+THEN '全部清算'
+END)
+END "clearType",
+ROUND(
+CASE WHEN
+(SELECT
+x.VALUE_DATE
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) IS NOT NULL
+THEN
+(SELECT
+x.TRANSFER_ASSET
+FROM t_trade_funds_share_change x
+WHERE x.ORIGIN_TRADE_INFO_ID = a.TRADE_INFO_ID
+AND x.RC_STATE = 'E'
+) 
+ELSE
+(
+CASE
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN (
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y 
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+)
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN (
+SELECT
+			x.net_value * (FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = e.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = e.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E")
+END 
+)
+END
+,2)"clearedScale",
+
+ROUND(CASE
+WHEN b.PRODUCT_SUB_TYPE = '01'
+THEN a.TRADE_TOTAL_ASSETS
+WHEN b.PRODUCT_SUB_TYPE = '02'
+THEN a.TRADE_TOTAL_ASSETS - (
+SELECT
+IFNULL(SUM(x.CONFIRM_DISTRIBUTE_PRINCIPAL),0)
+FROM
+t_pd_income_dis_detail x,
+t_pd_income_dis y 
+WHERE
+							1 = 1
+						AND b.PRODUCT_ID = y.PD_PRODUCT_ID
+						AND x.PD_INCOME_DISTRIBUTE_ID = y.PD_INCOME_DISTRIBUTE_ID
+						AND b.SALES_STATUS IN (0, 1)
+						AND x.RC_STATE = 'E'
+						AND y.RC_STATE = 'E'
+						AND a.TRADE_STAUS = '10'
+)
+WHEN b.PRODUCT_SUB_TYPE in('03','04') 
+THEN (
+SELECT
+			x.net_value * (
+y.subscription_copies-FUNC_GET_ALL_REDEMPTION_SHARE (A.TRADE_INFO_ID)
+			)
+		FROM
+			t_pd_wealth_net_value x,
+			t_trade_status_info y
+		WHERE
+			x.PD_WEALTH_ID = e.PD_WEALTH_ID
+		AND y.TRADE_INFO_ID = a.TRADE_INFO_ID
+		AND x.public_date = (
+			SELECT
+				max(a.public_date)
+			FROM
+				t_pd_wealth_net_value a
+			WHERE
+				a.pd_wealth_id = e.pd_wealth_id
+			AND a.rc_state = 'E'
+		)
+		AND x.RC_STATE = "E"
+		AND y.RC_STATE = "E") 
+END,2) "continuedScale",
+(
+		SELECT
+			t.AGENT_ID
+		FROM
+			t_agent t
+		WHERE
+			t.AGENT_ID = (
+				SELECT
+					m.agent_id
+				FROM
+					T_CUST_BELONG_OPERATION m
+				WHERE
+					m.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+				AND M.RC_STATE = 'E'
+				AND m.belong_end_date = (
+					SELECT
+						Max(n.belong_end_date)
+					FROM
+						T_CUST_BELONG_OPERATION n
+					WHERE
+						n.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+					AND n.RC_STATE = 'E'
+				)
+			)
+		AND t.RC_STATE = 'E'
+	) "originAgentId",
+(
+		SELECT
+			t.AGENT_NAME
+		FROM
+			t_agent t
+		WHERE
+			t.AGENT_ID = (
+				SELECT
+					m.agent_id
+				FROM
+					T_CUST_BELONG_OPERATION m
+				WHERE
+					m.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+				AND M.RC_STATE = 'E'
+				AND m.belong_end_date = (
+					SELECT
+						Max(n.belong_end_date)
+					FROM
+						T_CUST_BELONG_OPERATION n
+					WHERE
+						n.Cust_Base_Info_Id = c.Cust_Base_Info_Id
+					AND n.RC_STATE = 'E'
+				)
+			)
+		AND t.RC_STATE = 'E'
+	) "originAgentName",
+(SELECT
+x.COM_NAME
+FROM
+t_def_com x
+WHERE
+x.COM_ID = f.COM_ID
+AND f.AGENT_ID = originAgentId
+AND x.RC_STATE = 'E'
+) "originComName",
+(SELECT
+x.DEPARTMENT_NAME
+FROM
+t_def_department x
+WHERE
+x.DEPARTMENT_ID = f.DEPARTMENT_ID
+AND f.AGENT_ID = originAgentId
+AND x.RC_STATE = 'E'
+) "originDepartmentName",
+ROUND(CASE
+WHEN v.beneficialType IS NOT NULL
+THEN (SELECT 
+x.EXPECTED_FEE_RATE
+FROM
+t_pd_wealth_fee_rate x
+WHERE 
+x.beneficial_type = v.beneficialType
+AND x.PD_WEALTH_ID = e.PD_WEALTH_ID
+AND x.rc_state = "E")
+ELSE (
+SELECT
+MAX(x.EXPECTED_FEE_RATE)
+FROM
+t_pd_wealth_fee_rate x
+WHERE 
+ x.PD_WEALTH_ID = e.PD_WEALTH_ID
+AND x.rc_state = "E"
+)
+END,4) "originExpectFeeRate",
+				b.remark "remark"
+FROM
+	t_trade_info a,
+	t_pd_product b,
+	t_trade_product_info_view v,
+	t_cust_base_info c,
+	t_trade_cust_info d,
+	t_pd_wealth e,
+t_agent f,
+t_trade_status_info g
+WHERE
+	a.TRADE_INFO_ID = v.TRADE_INFO_ID
+AND b.PRODUCT_ID = v.PRODUCT_ID
+AND c.CUST_BASE_INFO_ID = d.CUST_BASE_INFO_ID
+AND a.TRADE_INFO_ID = d.TRADE_INFO_ID
+AND e.PRODUCT_ID = b.PRODUCT_ID
+AND a.AGENT_ID = f.AGENT_ID
+AND g.TRADE_INFO_ID = a.TRADE_INFO_ID
+AND a.TRADE_STAUS in ("10","11","12","13")
+AND a.RC_STATE = "E"
+AND b.RC_STATE = "E"
+AND c.RC_STATE = "E"
+AND d.RC_STATE = "E"
+AND e.RC_STATE = "E"
+AND f.RC_STATE = "E"
+AND g.RC_STATE = "E"
+<include refid="querySaleProductsListCondition"/>
+ORDER BY
+	MONTH ) t,
+(SELECT @rowNum := 0) T2
+ORDER BY serialNo 
+	
+</select>
+
+<!-- 产品查询语句 -->
+	<select id="productQueryList" parameterType="java.util.Map"
+		resultType="java.util.Map">
+		
+		<!--s-->
+		select tAlias.*
+		from (select nAlias.*, @rownum:=@rownum+1 r_rownum
+		from
+		(SELECT (SELECT @rownum := 0),
+		A.Product_Id "productId",
+		(select B.AGENCY_NAME
+		from t_agency_com B
+		where B.AGENCY_COM_ID = A.AGENCY_COM_ID) "agencyComId",
+		A.PRODUCT_CODE
+		"productCode",
+		A.PRODUCT_NAME "productName",
+		(select B.code_name
+		from
+		t_def_code B
+		where B.code_type = 'productType'
+		and B.code =
+		A.product_type) "productType",
+		A.Product_Type "productTypeCode",
+		(select B.code_name
+		from t_def_code B
+		where B.code = A.product_sub_type
+		and B.other_sign = A.product_type) "productSubType",
+		A.Product_Sub_Type "productSubTypeCode",
+		(select b.code_name
+		from
+		t_def_code b
+		where b.code = A.sales_status
+		and b.code_type =
+		'salesStatus') "salesStatus",
+		(select b.code_name
+		from t_def_code b
+		where b.code = A.status
+		and b.code_type = 'productStatus') "status",
+		A.Status "statusCode"
+		FROM T_PD_PRODUCT A
+		WHERE 1 = 1
+		and A.RC_STATE = 'E'
+        and A.status = '2'
+		<include refid="productQueryCondition" />
+		order by A.Product_Id desc) nAlias) tAlias
+		where
+		r_rownum  >=
+		#{startIndex}
+		and #{endIndex} >= r_rownum 
+	</select>
+	<!-- 产品设置查询语句 -->
+	<select id="productQueryListCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		SELECT COUNT(1)
+		FROM T_PD_PRODUCT A
+		WHERE 1=1 
+		and A.RC_STATE = 'E'
+        and A.status = '2'
+		<include refid="productQueryCondition" />
+	</select>
+
+<!-- 产品查询条件 -->
+	<sql id="productQueryCondition">
+		<if test='agencyComId!= null and agencyComId!=""'>
+			AND A.AGENCY_COM_ID = #{agencyComId}
+		</if>
+		<if test='productId!= null and productId!=""'>
+			AND A.PRODUCT_ID = #{productId}
+		</if>
+		<if test='productType != null and productType !=""'>
+			AND A.PRODUCT_TYPE = #{productType}
+		</if>
+		<if test="productSubType != null and productSubType !=''">
+			AND A.PRODUCT_SUB_TYPE = #{productSubType}
+		</if>
+		<if test='salesStatus != null and salesStatus !=""'>
+			AND A.SALES_STATUS = #{salesStatus}
+		</if>
+	</sql>
+	
+	<select id="queryProductBasicInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		select 	 A.Product_Id "productId",
+    (select B.AGENCY_NAME
+		from t_agency_com B
+		where B.AGENCY_COM_ID = A.AGENCY_COM_ID) "agencyComId",
+		A.PRODUCT_CODE "productCode",
+		A.PRODUCT_NAME "productName",
+    A.PRODUCT_SHORT_NAME "productShortName",
+    FUNC_GET_CODE_NAME("productType",A.product_type) "productType",
+		(select B.code_name
+		from t_def_code B
+		where B.code = A.product_sub_type
+		and B.other_sign = A.product_type) "productSubType",
+    A.INTRODUCE_DATE "introduceDate",
+    FUNC_GET_CODE_NAME("salesStatus",A.sales_status) "salesStatus",
+    A.STATUS "status",
+		FUNC_GET_CODE_NAME("isOrder",A.IS_ORDER) "isOrder",
+		FUNC_GET_CODE_NAME("isInviteCode",A.IS_INVITE_CODE) "isInviteCode"
+		FROM T_PD_PRODUCT A
+		WHERE 1 = 1
+		and A.RC_STATE = 'E'
+    and A.Product_Id = #{productId}
+    </select> 
+    
+    <select id="getProductCoreInfo" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT case WHEN 
+(SELECT x.PRODUCT_SUB_TYPE 
+from t_pd_product x 
+where x.rc_state = 'E' 
+and x.product_id = #{productId}) in('03','04') 
+then FUNC_GET_CODE_NAME('fdWealthCategory',a.WEALTH_CATEGORY)
+when (SELECT x.PRODUCT_SUB_TYPE 
+from t_pd_product x 
+where x.rc_state = 'E' 
+and x.product_id = #{productId}) = '01'
+then FUNC_GET_CODE_NAME('gqWealthCategory',a.WEALTH_CATEGORY)
+when (SELECT x.PRODUCT_SUB_TYPE 
+from t_pd_product x 
+where x.rc_state = 'E' 
+and x.product_id = #{productId}) = '02'
+then FUNC_GET_CODE_NAME('gdWealthCategory',a.WEALTH_CATEGORY)
+end  "wealthCategory",
+DATE_FORMAT(a.FOUND_DATE,'%Y-%m-%d') "foundDate",
+a.FINANCING_SCALE "financingScale",
+FUNC_GET_CODE_NAME('level',a.GRADE) "grade",
+FUNC_GET_BENEFICIAL_CODE_NAME(A.BENEFICIAL_TYPES) "beneficialTypes",
+a.START_INVEST_MONEY "startInvestMoney",
+a.INVEST_LIMIT_MONEY "investLimitMoney",
+a.INVEST_INCREASE_MONEY "investIncreaseMoney",
+a.SMALL_bigint "smallNumber",
+DATE_FORMAT(a.RAISE_START_DATE,'%Y-%m-%d') "raiseStartDate",
+DATE_FORMAT(a.RAISE_END_DATE,'%Y-%m-%d') "raiseEndDate",
+a.CLOSE_DPERIODS "closeDperiods",
+FUNC_GET_CODE_NAME('cloPeriUnit',a.CLOSE_DPERIOD_UNIT) "closeDperiodUnit",
+a.TRANSFER_WORK_DAYS "transferWorkDays",
+FUNC_GET_CODE_NAME('closeDperiodType',a.CLOSE_DPERIOD_TYPE) "closeDperiodType",
+a.CLOSE_DPERIOD_FEE "closeDperiodFee",
+FUNC_GET_CODE_NAME('incomeWay',a.INCOME_WAY) "incomeWay",
+a.HISTORY_EARNRATE "historyEarnrate",
+a.HISTORY_EARNRATE_PERIOD "historyEarnratePeriod"
+from t_pd_wealth a
+WHERE a.RC_STATE = 'E'
+and a.PRODUCT_ID = #{productId}
+    </select> 
+</mapper>
